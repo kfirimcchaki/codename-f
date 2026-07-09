@@ -1,0 +1,197 @@
+{
+	"achievements": [
+		{
+			"id": "first_clear",
+			"name": "First Steps",
+			"description": "Complete any song for the first time",
+			"icon": "achievements/first_clear",
+			"category": "GAMEPLAY",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "full_combo",
+			"name": "Flawless",
+			"description": "Get a Full Combo on any song",
+			"icon": "achievements/fc",
+			"category": "GAMEPLAY",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "perfect",
+			"name": "Perfectionist",
+			"description": "Get 100% accuracy on any song",
+			"icon": "achievements/perfect",
+			"category": "GAMEPLAY",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "notes_hit_1000",
+			"name": "Note Novice",
+			"description": "Hit 1,000 notes total",
+			"icon": "achievements/notes_1k",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 1000,
+			"isSecret": false
+		},
+		{
+			"id": "notes_hit_10000",
+			"name": "Note Master",
+			"description": "Hit 10,000 notes total",
+			"icon": "achievements/notes_10k",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 10000,
+			"isSecret": false
+		},
+		{
+			"id": "notes_hit_100000",
+			"name": "Note Legend",
+			"description": "Hit 100,000 notes total",
+			"icon": "achievements/notes_100k",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 100000,
+			"isSecret": false
+		},
+		{
+			"id": "songs_cleared_10",
+			"name": "Playlist Explorer",
+			"description": "Complete 10 different songs",
+			"icon": "achievements/songs_10",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 10,
+			"isSecret": false
+		},
+		{
+			"id": "songs_cleared_50",
+			"name": "Song Connoisseur",
+			"description": "Complete 50 different songs",
+			"icon": "achievements/songs_50",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 50,
+			"isSecret": false
+		},
+		{
+			"id": "hard_clear",
+			"name": "Hardcore",
+			"description": "Complete any song on Hard difficulty",
+			"icon": "achievements/hard_clear",
+			"category": "DIFFICULTY",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "all_difficulties",
+			"name": "Versatile",
+			"description": "Complete the same song on all difficulties",
+			"icon": "achievements/all_diff",
+			"category": "DIFFICULTY",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "mod_loaded",
+			"name": "Modder's Delight",
+			"description": "Load a mod for the first time",
+			"icon": "achievements/mod_loaded",
+			"category": "MODDING",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "editor_used",
+			"name": "Creator",
+			"description": "Open any editor",
+			"icon": "achievements/editor",
+			"category": "MODDING",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "custom_chart",
+			"name": "Chart Maker",
+			"description": "Create and save a custom chart",
+			"icon": "achievements/chart",
+			"category": "MODDING",
+			"type": "CONDITION",
+			"isSecret": false
+		},
+		{
+			"id": "play_time_1h",
+			"name": "Getting Started",
+			"description": "Play for 1 hour total",
+			"icon": "achievements/time_1h",
+			"category": "TIME",
+			"type": "TIME",
+			"targetTime": 3600,
+			"isSecret": false
+		},
+		{
+			"id": "play_time_10h",
+			"name": "Dedicated",
+			"description": "Play for 10 hours total",
+			"icon": "achievements/time_10h",
+			"category": "TIME",
+			"type": "TIME",
+			"targetTime": 36000,
+			"isSecret": false
+		},
+		{
+			"id": "streak_5",
+			"name": "On A Roll",
+			"description": "Clear 5 songs in a row without failing",
+			"icon": "achievements/streak_5",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 5,
+			"isSecret": false
+		},
+		{
+			"id": "streak_20",
+			"name": "Unstoppable",
+			"description": "Clear 20 songs in a row without failing",
+			"icon": "achievements/streak_20",
+			"category": "GAMEPLAY",
+			"type": "COUNT",
+			"targetCount": 20,
+			"isSecret": false
+		},
+		{
+			"id": "secret_debug",
+			"name": "???",
+			"description": "Discover the secret debug mode",
+			"icon": "achievements/secret",
+			"category": "SECRET",
+			"type": "CONDITION",
+			"isSecret": true,
+			"secretName": "Hacker",
+			"secretDescription": "Access the hidden debug console"
+		},
+		{
+			"id": "secret_spam",
+			"name": "???",
+			"description": "Find the hidden easter egg",
+			"icon": "achievements/secret",
+			"category": "SECRET",
+			"type": "CONDITION",
+			"isSecret": true,
+			"secretName": "Button Masher",
+			"secretDescription": "Click the logo 100 times"
+		},
+		{
+			"id": "visual_script",
+			"name": "Node Master",
+			"description": "Create a visual script with 10+ nodes",
+			"icon": "achievements/visual_script",
+			"category": "MODDING",
+			"type": "CONDITION",
+			"isSecret": false
+		}
+	]
+}

@@ -1,0 +1,12 @@
+{
+	"name": "Example Mod",
+	"description": "An example mod showcasing the new engine features",
+	"author": "YourName",
+	"version": "1.0.0",
+	"engineVersion": "codename",
+	"dependencies": [],
+	"tags": ["example", "showcase"],
+	"restartRequired": false,
+	"enabled": true,
+	"priority": 0
+}

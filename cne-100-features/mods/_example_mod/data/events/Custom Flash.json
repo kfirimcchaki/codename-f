@@ -1,0 +1,7 @@
+{
+	"params": [
+		{"name": "Flash Color", "type": "ColorWheel", "defaultValue": "#FF0088"},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 2},
+		{"name": "Intensity", "type": "Float(0, 2, 0.05, 2)", "defaultValue": 0.5}
+	]
+}

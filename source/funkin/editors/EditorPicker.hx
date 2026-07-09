@@ -28,26 +28,6 @@ class EditorPicker extends MusicBeatSubstate {
 			id: "alphabet",
 			state: funkin.editors.alphabet.AlphabetSelection
 		},
-		{
-			name: "Visual Script Editor",
-			id: "visualScript",
-			state: funkin.editors.visualscript.VisualScriptEditor
-		},
-		{
-			name: "Dialogue Editor",
-			id: "dialogue",
-			state: funkin.editors.dialogue.DialogueEditor
-		},
-		{
-			name: "Animation Editor",
-			id: "animation",
-			state: funkin.editors.animation.AnimationEditor
-		},
-		{
-			name: "Shader Editor",
-			id: "shader",
-			state: funkin.editors.shader.ShaderEditor
-		},
 		#if (debug || debug_ui)
 		{
 			name: "UI Debug State",

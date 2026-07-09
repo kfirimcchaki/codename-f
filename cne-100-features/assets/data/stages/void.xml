@@ -1,0 +1,9 @@
+<!DOCTYPE codename-engine-stage>
+<stage zoom="1.0" name="void" startCamPosX="600" startCamPosY="300">
+	<!-- Void Stage - Minimalist dark background -->
+	<solid name="bg" x="0" y="0" width="1280" height="720" color="#1a1a2e" scroll="0" />
+	<girlfriend />
+	<dad />
+	<boyfriend />
+	<solid name="floor_glow" x="0" y="500" width="1280" height="220" color="#16213e" scroll="0.8" />
+</stage>

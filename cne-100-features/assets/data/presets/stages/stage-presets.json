@@ -1,0 +1,83 @@
+{
+	"presets": [
+		{
+			"id": "concert_stage",
+			"name": "Concert Stage",
+			"description": "Full concert stage with lights and crowd",
+			"category": "Performance",
+			"elements": [
+				{"type": "sprite", "name": "bg_crowd", "image": "stages/concert/crowd", "x": 0, "y": 0, "scroll": 0.3},
+				{"type": "sprite", "name": "stage_floor", "image": "stages/concert/floor", "x": 0, "y": 350, "scroll": 1.0},
+				{"type": "sprite", "name": "stage_lights", "image": "stages/concert/lights", "x": 0, "y": -100, "scroll": 0.8},
+				{"type": "sprite", "name": "speakers_left", "image": "stages/concert/speakers", "x": -100, "y": 200, "scroll": 1.2},
+				{"type": "sprite", "name": "speakers_right", "image": "stages/concert/speakers", "x": 1100, "y": 200, "scroll": 1.2}
+			],
+			"characterPositions": {"boyfriend": [770, 100], "dad": [100, 100], "girlfriend": [400, 50]},
+			"cameraStart": [600, 300],
+			"cameraZoom": 0.85,
+			"lighting": "Concert"
+		},
+		{
+			"id": "neon_city",
+			"name": "Neon City",
+			"description": "Cyberpunk city with neon lights",
+			"category": "Urban",
+			"elements": [
+				{"type": "sprite", "name": "skyline", "image": "stages/neon/skyline", "x": 0, "y": 0, "scroll": 0.2},
+				{"type": "sprite", "name": "buildings_mid", "image": "stages/neon/buildings_mid", "x": 0, "y": 50, "scroll": 0.5},
+				{"type": "sprite", "name": "buildings_front", "image": "stages/neon/buildings_front", "x": 0, "y": 150, "scroll": 0.8},
+				{"type": "sprite", "name": "street", "image": "stages/neon/street", "x": 0, "y": 400, "scroll": 1.0},
+				{"type": "sprite", "name": "neon_signs", "image": "stages/neon/signs", "x": 0, "y": 50, "scroll": 0.6}
+			],
+			"characterPositions": {"boyfriend": [770, 100], "dad": [100, 100], "girlfriend": [400, 130]},
+			"cameraStart": [600, 300],
+			"cameraZoom": 0.85,
+			"lighting": "Neon"
+		},
+		{
+			"id": "outdoor_park",
+			"name": "Outdoor Park",
+			"description": "Park stage with trees and sky",
+			"category": "Outdoor",
+			"elements": [
+				{"type": "sprite", "name": "sky", "image": "stages/park/sky", "x": 0, "y": 0, "scroll": 0.1},
+				{"type": "sprite", "name": "clouds", "image": "stages/park/clouds", "x": 0, "y": 0, "scroll": 0.2},
+				{"type": "sprite", "name": "trees_back", "image": "stages/park/trees_back", "x": 0, "y": 100, "scroll": 0.4},
+				{"type": "sprite", "name": "trees_front", "image": "stages/park/trees_front", "x": 0, "y": 200, "scroll": 0.8},
+				{"type": "sprite", "name": "grass", "image": "stages/park/grass", "x": 0, "y": 400, "scroll": 1.0}
+			],
+			"characterPositions": {"boyfriend": [770, 100], "dad": [100, 100], "girlfriend": [400, 130]},
+			"cameraStart": [600, 300],
+			"cameraZoom": 0.9,
+			"lighting": "Sunset"
+		},
+		{
+			"id": "void",
+			"name": "Void",
+			"description": "Empty void with gradient background",
+			"category": "Abstract",
+			"elements": [
+				{"type": "solid", "name": "bg", "color": "#1a1a2e", "x": 0, "y": 0, "width": 1280, "height": 720, "scroll": 0}
+			],
+			"characterPositions": {"boyfriend": [770, 100], "dad": [100, 100], "girlfriend": [400, 130]},
+			"cameraStart": [600, 300],
+			"cameraZoom": 1.0
+		},
+		{
+			"id": "horror_basement",
+			"name": "Horror Basement",
+			"description": "Dark basement with flickering lights",
+			"category": "Horror",
+			"elements": [
+				{"type": "sprite", "name": "bg_walls", "image": "stages/horror/walls", "x": 0, "y": 0, "scroll": 0.6},
+				{"type": "sprite", "name": "floor", "image": "stages/horror/floor", "x": 0, "y": 400, "scroll": 1.0},
+				{"type": "sprite", "name": "pipes", "image": "stages/horror/pipes", "x": 0, "y": -50, "scroll": 0.9},
+				{"type": "sprite", "name": "light_bulb", "image": "stages/horror/bulb", "x": 640, "y": -20, "scroll": 0.7}
+			],
+			"characterPositions": {"boyfriend": [770, 100], "dad": [100, 100], "girlfriend": [400, 130]},
+			"cameraStart": [600, 300],
+			"cameraZoom": 0.9,
+			"lighting": "Horror"
+		}
+	]
+}

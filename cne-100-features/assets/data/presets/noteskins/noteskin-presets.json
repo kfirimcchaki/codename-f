@@ -1,0 +1,43 @@
+{
+	"presets": [
+		{
+			"id": "default",
+			"name": "Default Notes",
+			"description": "Standard FNF note skin",
+			"settings": {
+				"image": "NOTE_assets",
+				"noteSize": {"width": 157, "height": 154},
+				"strumSize": {"width": 157, "height": 154},
+				"splashImage": "noteSplashes",
+				"colors": ["#C24B99", "#00FFFF", "#12FA05", "#F9393F"],
+				"animPrefixes": ["purple", "blue", "green", "red"]
+			}
+		},
+		{
+			"id": "pixel",
+			"name": "Pixel Notes",
+			"description": "Week 6 pixel-style notes",
+			"settings": {
+				"image": "weeb/pixelUI/arrows-pixels",
+				"noteSize": {"width": 17, "height": 17},
+				"strumSize": {"width": 17, "height": 17},
+				"scale": 6,
+				"colors": ["#C24B99", "#00FFFF", "#12FA05", "#F9393F"],
+				"animPrefixes": ["arrowLEFT", "arrowDOWN", "arrowUP", "arrowRIGHT"]
+			}
+		},
+		{
+			"id": "circle",
+			"name": "Circle Notes",
+			"description": "Simple circle-based notes",
+			"settings": {
+				"image": "notes/circle_notes",
+				"noteSize": {"width": 128, "height": 128},
+				"strumSize": {"width": 128, "height": 128},
+				"splashImage": "notes/circle_splashes",
+				"colors": ["#9B59B6", "#3498DB", "#2ECC71", "#E74C3C"],
+				"animPrefixes": ["left", "down", "up", "right"]
+			}
+		}
+	]
+}

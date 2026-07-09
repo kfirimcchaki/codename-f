@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Strumline", "type": "Int(0, 10, 1)", "defaultValue": 0},
+		{"name": "Angle", "type": "Float(-360, 360, 1, 0)", "defaultValue": 0},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4}
+	]
+}

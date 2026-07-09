@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Strumline", "type": "Int(0, 10, 1)", "defaultValue": 0},
+		{"name": "X", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 0},
+		{"name": "Y", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 50},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'backOut', 'elasticOut')", "defaultValue": "quadOut"}
+	]
+}

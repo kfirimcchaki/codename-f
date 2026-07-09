@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Color", "type": "ColorWheel", "defaultValue": "#000000"},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Target", "type": "DropDown('camGame', 'camHUD')", "defaultValue": "camGame"}
+	]
+}

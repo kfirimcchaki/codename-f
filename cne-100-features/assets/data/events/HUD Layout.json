@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Action", "type": "DropDown('move', 'scale', 'rotate', 'fade', 'show', 'hide')", "defaultValue": "move"},
+		{"name": "Element", "type": "DropDown('healthbar', 'score', 'timebar', 'combo', 'all', 'custom')", "defaultValue": "healthbar"},
+		{"name": "X", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 0},
+		{"name": "Y", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 0},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'cubicOut', 'backOut')", "defaultValue": "quadOut"}
+	]
+}

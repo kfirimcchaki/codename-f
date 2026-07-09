@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Target", "type": "String", "defaultValue": "boyfriend"},
+		{"name": "Property", "type": "DropDown('visible', 'alpha', 'both')", "defaultValue": "both"},
+		{"name": "Value", "type": "Float(0, 1, 0.01, 2)", "defaultValue": 1},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'cubicOut', 'expoOut')", "defaultValue": "linear"}
+	]
+}

@@ -1,0 +1,48 @@
+{
+	"id": "vs_example_beat_sync",
+	"name": "Beat Sync Example",
+	"description": "Example visual script that spawns particles on every beat",
+	"version": "1.0.0",
+	"author": "CodenameEngine",
+	"tags": ["example", "beat", "particles"],
+	"variables": [
+		{"name": "particleCount", "type": "int", "defaultValue": 5, "description": "Number of particles per beat"},
+		{"name": "intensity", "type": "float", "defaultValue": 1.0, "description": "Particle intensity multiplier"},
+		{"name": "color", "type": "string", "defaultValue": "#FFFFFF", "description": "Particle color"}
+	],
+	"groups": [
+		{"name": "Beat Logic", "color": 4286611584, "x": 50, "y": 50, "width": 600, "height": 400, "nodeIDs": ["n1", "n2", "n3", "n4"]}
+	],
+	"nodes": [
+		{
+			"className": "funkin.visualscripting.nodes.VSOnBeatNode",
+			"id": "n1",
+			"x": 100, "y": 100,
+			"isCollapsed": false, "isEnabled": true, "comment": "Triggers every beat"
+		},
+		{
+			"className": "funkin.visualscripting.nodes.VSGetVariableNode",
+			"id": "n2",
+			"x": 100, "y": 250,
+			"isCollapsed": false, "isEnabled": true, "comment": "",
+			"inputValues": {},
+			"outputValues": {}
+		},
+		{
+			"className": "funkin.visualscripting.nodes.VSRandomNode",
+			"id": "n3",
+			"x": 350, "y": 150,
+			"isCollapsed": false, "isEnabled": true, "comment": "Random X position"
+		},
+		{
+			"className": "funkin.visualscripting.nodes.VSSpawnParticlesNode",
+			"id": "n4",
+			"x": 500, "y": 100,
+			"isCollapsed": false, "isEnabled": true, "comment": "Spawn the particles!"
+		}
+	],
+	"connections": [
+		{"id": "c1", "sourceNodeID": "n1", "sourcePort": "exec_out", "targetNodeID": "n4", "targetPort": "exec_in"},
+		{"id": "c2", "sourceNodeID": "n3", "sourcePort": "result", "targetNodeID": "n4", "targetPort": "x"}
+	]
+}

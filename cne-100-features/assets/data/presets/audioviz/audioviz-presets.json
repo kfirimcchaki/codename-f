@@ -1,0 +1,134 @@
+{
+	"presets": [
+		{
+			"id": "bottom_bars",
+			"name": "Bottom Bars",
+			"description": "Classic frequency bars along the bottom of the screen",
+			"category": "Bars",
+			"settings": {
+				"type": "bars",
+				"position": {"x": 0, "y": 680},
+				"size": {"width": 1280, "height": 40},
+				"barCount": 64,
+				"barWidth": 16,
+				"barSpacing": 4,
+				"maxHeight": 200,
+				"colors": ["#00FF88", "#FFFF00", "#FF4444"],
+				"smoothing": 0.8,
+				"mirror": false,
+				"orientation": "up",
+				"reactBand": "all",
+				"blendMode": "add",
+				"scrollFactor": {"x": 0, "y": 0},
+				"opacity": 0.6,
+				"roundBars": false,
+				"gradient": true
+			}
+		},
+		{
+			"id": "circular_viz",
+			"name": "Circular Visualizer",
+			"description": "Circular frequency visualizer centered on screen",
+			"category": "Circular",
+			"settings": {
+				"type": "circular",
+				"position": {"x": 640, "y": 360},
+				"radius": 100,
+				"innerRadius": 60,
+				"barCount": 128,
+				"maxHeight": 80,
+				"colors": ["#4488FF", "#8844FF", "#FF4488"],
+				"smoothing": 0.85,
+				"rotation": 0,
+				"rotationSpeed": 0.5,
+				"reactBand": "all",
+				"blendMode": "add",
+				"opacity": 0.7,
+				"mirror": true,
+				"fillCenter": true,
+				"centerColor": "#111122"
+			}
+		},
+		{
+			"id": "waveform_line",
+			"name": "Waveform Line",
+			"description": "Oscilloscope-style waveform across the screen",
+			"category": "Wave",
+			"settings": {
+				"type": "wave",
+				"position": {"x": 0, "y": 360},
+				"size": {"width": 1280, "height": 200},
+				"color": "#00FFAA",
+				"thickness": 2,
+				"smoothing": 0.6,
+				"amplitude": 100,
+				"blendMode": "add",
+				"opacity": 0.5,
+				"scrollFactor": {"x": 0, "y": 0},
+				"glow": true,
+				"glowIntensity": 0.5
+			}
+		},
+		{
+			"id": "beat_pulse_bg",
+			"name": "Beat Pulse Background",
+			"description": "Background pulses with the beat",
+			"category": "Background",
+			"settings": {
+				"type": "bg_pulse",
+				"position": {"x": 0, "y": 0},
+				"size": {"width": 1280, "height": 720},
+				"reactBand": "bass",
+				"smoothing": 0.95,
+				"colors": ["#000022", "#220044", "#440066"],
+				"opacity": 0.3,
+				"pulseScale": 1.2,
+				"scrollFactor": {"x": 0, "y": 0}
+			}
+		},
+		{
+			"id": "spectrum_mirror",
+			"name": "Mirror Spectrum",
+			"description": "Mirrored frequency bars from center",
+			"category": "Bars",
+			"settings": {
+				"type": "bars",
+				"position": {"x": 640, "y": 360},
+				"size": {"width": 800, "height": 300},
+				"barCount": 48,
+				"barWidth": 12,
+				"barSpacing": 4,
+				"maxHeight": 150,
+				"colors": ["#0088FF", "#8800FF"],
+				"smoothing": 0.75,
+				"mirror": true,
+				"orientation": "mirror_vertical",
+				"reactBand": "all",
+				"blendMode": "add",
+				"opacity": 0.5,
+				"roundBars": true,
+				"gradient": true
+			}
+		},
+		{
+			"id": "radial_wave",
+			"name": "Radial Wave",
+			"description": "Smooth radial waveform emanating from center",
+			"category": "Circular",
+			"settings": {
+				"type": "radial_wave",
+				"position": {"x": 640, "y": 360},
+				"radius": 150,
+				"points": 256,
+				"amplitude": 50,
+				"color": "#FFFFFF",
+				"thickness": 1.5,
+				"smoothing": 0.7,
+				"blendMode": "add",
+				"opacity": 0.4,
+				"mirror": true,
+				"rotationSpeed": 0
+			}
+		}
+	]
+}
