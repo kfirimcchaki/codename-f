@@ -15,22 +15,16 @@ var cursorLine:Int = 0;
 var cursorCol:Int = 0;
 var scrollY:Float = 0;
 var lineH:Int = 16;
-var editing:Bool = false;
 
-// Tabs
 var tabs:Array<Dynamic> = [];
 var activeTab:Dynamic = null;
-
-// Undo/Redo
 var undoStack:Array<Dynamic> = [];
 var redoStack:Array<Dynamic> = [];
 
-// Find
 var findQuery:String = "";
 var findResults:Array<Dynamic> = [];
 var findMode:Bool = false;
 
-// Parsed
 var parsedPkg:String = "";
 var parsedClass:String = "";
 var parsedExtends:String = "";
@@ -39,31 +33,19 @@ var parsedVars:Array<Dynamic> = [];
 var parsedImports:Int = 0;
 
 // ============ UI ============
-var bg:FlxSprite;
-var headerBg:FlxSprite;
-var tabBarBg:FlxSprite;
-var visualBg:FlxSprite;
-var editorBg:FlxSprite;
-var minimapBg:FlxSprite;
-var statusBg:FlxSprite;
-var findBg:FlxSprite;
-
 var titleText:FlxText;
 var hintText:FlxText;
 var lineNumText:FlxText;
 var codeText:FlxText;
 var highlightSpr:FlxSprite;
-var visualTitleText:FlxText;
-var minimapTitleText:FlxText;
 var minimapCodeText:FlxText;
 var statusLabelText:FlxText;
 var findLabelText:FlxText;
 var findResultText:FlxText;
-
+var findBg:FlxSprite;
 var visualItemsGroup:FlxTypedGroup<FlxSprite>;
 var tabItemsGroup:FlxTypedGroup<FlxSprite>;
 
-// Colors
 var COL_BG = FlxColor.fromRGB(24, 24, 32);
 var COL_PANEL = FlxColor.fromRGB(30, 30, 42);
 var COL_PANEL2 = FlxColor.fromRGB(22, 22, 30);
@@ -72,9 +54,8 @@ var COL_TEXT = FlxColor.fromRGB(215, 215, 230);
 var COL_DIM = FlxColor.fromRGB(100, 100, 125);
 var COL_ACCENT = FlxColor.fromRGB(80, 150, 255);
 var COL_LINE_HL = FlxColor.fromRGB(36, 36, 50);
-var COL_SELECT = FlxColor.fromRGB(50, 60, 95);
-var COL_ERROR = FlxColor.fromRGB(255, 80, 80);
 var COL_SUCCESS = FlxColor.fromRGB(80, 255, 120);
+var COL_ERROR = FlxColor.fromRGB(255, 80, 80);
 
 var VISUAL_W = 290;
 var MINIMAP_W = 100;
@@ -88,15 +69,12 @@ var STATUS_H = 26;
 function create() {
 	FlxG.mouse.visible = true;
 
-	// Get file path from ModState data
 	if (data != null && Reflect.hasField(data, "path")) filePath = data.path;
 
-	// Background
-	bg = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, COL_BG);
+	var bg = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, COL_BG);
 	add(bg);
 
-	// Header
-	headerBg = new FlxSprite(0, 0).makeGraphic(FlxG.width, TOP_H, FlxColor.fromRGB(16, 16, 24));
+	var headerBg = new FlxSprite(0, 0).makeGraphic(FlxG.width, TOP_H, FlxColor.fromRGB(16, 16, 24));
 	add(headerBg);
 
 	titleText = new FlxText(12, 8, 200, "HX Editor", 15);
@@ -107,32 +85,29 @@ function create() {
 	hintText.color = COL_DIM;
 	add(hintText);
 
-	// Tab bar
-	tabBarBg = new FlxSprite(0, TOP_H).makeGraphic(FlxG.width, TAB_H, FlxColor.fromRGB(20, 20, 30));
+	var tabBarBg = new FlxSprite(0, TOP_H).makeGraphic(FlxG.width, TAB_H, FlxColor.fromRGB(20, 20, 30));
 	add(tabBarBg);
 
 	tabItemsGroup = new FlxTypedGroup<FlxSprite>();
 	add(tabItemsGroup);
 
-	// Visual panel
-	visualBg = new FlxSprite(0, TOP_H + TAB_H).makeGraphic(VISUAL_W, FlxG.height - TOP_H - TAB_H - STATUS_H, COL_PANEL);
+	var visualBg = new FlxSprite(0, TOP_H + TAB_H).makeGraphic(VISUAL_W, FlxG.height - TOP_H - TAB_H - STATUS_H, COL_PANEL);
 	add(visualBg);
 
-	visualTitleText = new FlxText(10, TOP_H + TAB_H + 6, VISUAL_W - 20, "Structure", 12);
-	visualTitleText.color = COL_DIM;
-	add(visualTitleText);
+	var visTitle = new FlxText(10, TOP_H + TAB_H + 6, VISUAL_W - 20, "Structure", 12);
+	visTitle.color = COL_DIM;
+	add(visTitle);
 
 	visualItemsGroup = new FlxTypedGroup<FlxSprite>();
 	add(visualItemsGroup);
 
-	// Code editor area
 	var ex = VISUAL_W;
 	var ey = TOP_H + TAB_H;
 	var ew = FlxG.width - VISUAL_W - MINIMAP_W;
 	var eh = FlxG.height - TOP_H - TAB_H - STATUS_H;
 
-	editorBg = new FlxSprite(ex, ey).makeGraphic(ew, eh, COL_EDITOR);
-	add(editorBg);
+	var edBg = new FlxSprite(ex, ey).makeGraphic(ew, eh, COL_EDITOR);
+	add(edBg);
 
 	highlightSpr = new FlxSprite(ex + 48, ey).makeGraphic(ew - 52, lineH, COL_LINE_HL);
 	highlightSpr.alpha = 0.6;
@@ -146,28 +121,25 @@ function create() {
 	codeText.color = COL_TEXT;
 	add(codeText);
 
-	// Minimap
 	var mx = FlxG.width - MINIMAP_W;
-	minimapBg = new FlxSprite(mx, ey).makeGraphic(MINIMAP_W, eh, COL_PANEL2);
-	add(minimapBg);
+	var miniBg = new FlxSprite(mx, ey).makeGraphic(MINIMAP_W, eh, COL_PANEL2);
+	add(miniBg);
 
-	minimapTitleText = new FlxText(mx + 6, ey + 4, MINIMAP_W - 12, "Minimap", 9);
-	minimapTitleText.color = COL_DIM;
-	add(minimapTitleText);
+	var miniTitle = new FlxText(mx + 6, ey + 4, MINIMAP_W - 12, "Minimap", 9);
+	miniTitle.color = COL_DIM;
+	add(miniTitle);
 
 	minimapCodeText = new FlxText(mx + 4, ey + 18, MINIMAP_W - 8, "", 3);
 	minimapCodeText.color = FlxColor.fromRGB(75, 75, 95);
 	add(minimapCodeText);
 
-	// Status bar
-	statusBg = new FlxSprite(0, FlxG.height - STATUS_H).makeGraphic(FlxG.width, STATUS_H, FlxColor.fromRGB(16, 16, 24));
+	var statusBg = new FlxSprite(0, FlxG.height - STATUS_H).makeGraphic(FlxG.width, STATUS_H, FlxColor.fromRGB(16, 16, 24));
 	add(statusBg);
 
 	statusLabelText = new FlxText(10, FlxG.height - STATUS_H + 5, FlxG.width - 20, "", 11);
 	statusLabelText.color = COL_DIM;
 	add(statusLabelText);
 
-	// Find panel (hidden)
 	findBg = new FlxSprite(ex, ey).makeGraphic(ew, 50, FlxColor.fromRGB(38, 38, 54));
 	findBg.visible = false;
 	add(findBg);
@@ -201,12 +173,7 @@ function create() {
 // =============================================================================
 function loadFile(path:String) {
 	try {
-		var c:String = "";
-		#if sys
-		c = sys.io.File.getContent(path);
-		#else
-		c = Assets.getText(path);
-		#end
+		var c:String = sys.io.File.getContent(path);
 		if (c == null) c = "";
 		filePath = path;
 		content = c;
@@ -225,7 +192,6 @@ function loadFile(path:String) {
 
 function saveFile() {
 	if (filePath == null || filePath.length == 0) return;
-	#if sys
 	try {
 		sys.io.File.saveContent(filePath, content);
 		originalContent = content;
@@ -236,7 +202,6 @@ function saveFile() {
 	} catch(e:Dynamic) {
 		trace("HXEditor: Save error: " + e);
 	}
-	#end
 }
 
 // =============================================================================
@@ -268,35 +233,52 @@ function refreshTabs() {
 }
 
 // =============================================================================
-//  PARSING
+//  PARSING - uses new EReg() for regex (HScript requirement)
 // =============================================================================
 function parseContent() {
 	parsedPkg = ""; parsedClass = ""; parsedExtends = ""; parsedFuncs = []; parsedVars = []; parsedImports = 0;
 
-	var m1 = ~/^package\s+([\w.]+)\s*;/m;
-	if (m1.match(content)) parsedPkg = m1.matched(1);
+	var pkgReg = new EReg("^package\\s+([\\w.]+)\\s*;", "m");
+	if (pkgReg.match(content)) parsedPkg = pkgReg.matched(1);
 
-	var m2 = ~/class\s+(\w+)(?:\s+extends\s+([\w.]+))?/;
-	if (m2.match(content)) { parsedClass = m2.matched(1); if (m2.matched(2) != null) parsedExtends = m2.matched(2); }
-
-	var impM = ~/^import\s+/gm;
-	var pos = 0;
-	while (impM.matchSub(content, pos)) { parsedImports++; pos = impM.matchedPos().pos + impM.matchedPos().len; }
-
-	var funcM = ~/((?:public|private|static|inline|override)\s+)*function\s+(\w+)/g;
-	pos = 0;
-	while (funcM.matchSub(content, pos)) {
-		var mods = funcM.matched(1) != null ? funcM.matched(1) : "";
-		parsedFuncs.push({ name: funcM.matched(2), pub: mods.indexOf("public") >= 0, stat: mods.indexOf("static") >= 0, over: mods.indexOf("override") >= 0, line: content.substr(0, funcM.matchedPos().pos).split("\n").length });
-		pos = funcM.matchedPos().pos + funcM.matchedPos().len;
+	var clsReg = new EReg("class\\s+(\\w+)(?:\\s+extends\\s+([\\w.]+))?", "");
+	if (clsReg.match(content)) {
+		parsedClass = clsReg.matched(1);
+		if (clsReg.matched(2) != null) parsedExtends = clsReg.matched(2);
 	}
 
-	var varM = ~/((?:public|private|static)\s+)*var\s+(\w+)\s*(?::\s*(\w+))?/g;
+	var impReg = new EReg("^import\\s+", "gm");
+	var pos = 0;
+	while (impReg.matchSub(content, pos)) {
+		parsedImports++;
+		pos = impReg.matchedPos().pos + impReg.matchedPos().len;
+	}
+
+	var funcReg = new EReg("((?:public|private|static|inline|override)\\s+)*function\\s+(\\w+)", "g");
 	pos = 0;
-	while (varM.matchSub(content, pos)) {
-		var mods = varM.matched(1) != null ? varM.matched(1) : "";
-		parsedVars.push({ name: varM.matched(2), type: varM.matched(3), pub: mods.indexOf("public") >= 0, stat: mods.indexOf("static") >= 0 });
-		pos = varM.matchedPos().pos + varM.matchedPos().len;
+	while (funcReg.matchSub(content, pos)) {
+		var mods = funcReg.matched(1) != null ? funcReg.matched(1) : "";
+		parsedFuncs.push({
+			name: funcReg.matched(2),
+			pub: mods.indexOf("public") >= 0,
+			stat: mods.indexOf("static") >= 0,
+			over: mods.indexOf("override") >= 0,
+			line: content.substr(0, funcReg.matchedPos().pos).split("\n").length
+		});
+		pos = funcReg.matchedPos().pos + funcReg.matchedPos().len;
+	}
+
+	var varReg = new EReg("((?:public|private|static)\\s+)*var\\s+(\\w+)\\s*(?::\\s*(\\w+))?", "g");
+	pos = 0;
+	while (varReg.matchSub(content, pos)) {
+		var mods = varReg.matched(1) != null ? varReg.matched(1) : "";
+		parsedVars.push({
+			name: varReg.matched(2),
+			type: varReg.matched(3),
+			pub: mods.indexOf("public") >= 0,
+			stat: mods.indexOf("static") >= 0
+		});
+		pos = varReg.matchedPos().pos + varReg.matchedPos().len;
 	}
 }
 
@@ -314,7 +296,9 @@ function refreshCode() {
 	if (startLine < 0) startLine = 0;
 
 	var lnBuf = new StringBuf();
-	for (i in startLine...Math.min(startLine + visLines, lines.length)) { lnBuf.add("" + (i + 1) + "\n"); }
+	for (i in startLine...Math.min(startLine + visLines, lines.length)) {
+		lnBuf.add("" + (i + 1) + "\n");
+	}
 	lineNumText.text = lnBuf.toString();
 
 	var displayLines = lines.slice(startLine, startLine + visLines);
@@ -463,8 +447,14 @@ function validateSyntax() {
 			var ch = line.charAt(i);
 			var next = i + 1 < line.length ? line.charAt(i + 1) : "";
 			if (inLineComment) continue;
-			if (inComment) { if (ch == "*" && next == "/") { inComment = false; i++; } continue; }
-			if (inStr) { if (ch == '"' && (i == 0 || line.charAt(i - 1) != '\\')) inStr = false; continue; }
+			if (inComment) {
+				if (ch == "*" && next == "/") { inComment = false; i++; }
+				continue;
+			}
+			if (inStr) {
+				if (ch == '"' && (i == 0 || line.charAt(i - 1) != '\\')) inStr = false;
+				continue;
+			}
 			if (ch == "/" && next == "/") inLineComment = true;
 			else if (ch == "/" && next == "*") { inComment = true; i++; }
 			else if (ch == '"') inStr = true;
@@ -509,15 +499,19 @@ function formatCode() {
 //  UPDATE
 // =============================================================================
 function update(elapsed:Float) {
-	// Exit
 	if (FlxG.keys.justPressed.ESCAPE) {
-		if (findBg.visible) { findBg.visible = false; findLabelText.visible = false; findResultText.visible = false; findMode = false; return; }
+		if (findBg.visible) {
+			findBg.visible = false;
+			findLabelText.visible = false;
+			findResultText.visible = false;
+			findMode = false;
+			return;
+		}
 		if (isDirty) saveFile();
 		FlxG.switchState(new funkin.menus.MainMenuState());
 		return;
 	}
 
-	// Ctrl shortcuts
 	if (FlxG.keys.pressed.CONTROL) {
 		if (FlxG.keys.justPressed.S) { saveFile(); return; }
 		if (FlxG.keys.justPressed.Z && !FlxG.keys.pressed.SHIFT) { undo(); return; }
@@ -528,23 +522,25 @@ function update(elapsed:Float) {
 			findBg.visible = findMode;
 			findLabelText.visible = findMode;
 			findResultText.visible = findMode;
-			if (findMode) { findQuery = ""; findLabelText.text = "Find: |  (type to search, ENTER to confirm)"; findResultText.text = ""; }
+			if (findMode) {
+				findQuery = "";
+				findLabelText.text = "Find: |  (type to search, ENTER to confirm)";
+				findResultText.text = "";
+			}
 			return;
 		}
 	}
 
-	// F5 = validate, F6 = format
 	if (FlxG.keys.justPressed.F5) { validateSyntax(); return; }
 	if (FlxG.keys.justPressed.F6) { formatCode(); return; }
 
-	// Find input
 	if (findMode) {
 		if (FlxG.keys.justPressed.BACKSPACE) {
 			findQuery = findQuery.substr(0, Math.max(0, findQuery.length - 1));
 			findLabelText.text = "Find: " + findQuery + "|";
 			performFind();
 		} else if (FlxG.keys.justPressed.ENTER) {
-			findLabelText.text = 'Find: "$findQuery"  (' + findResults.length + ' matches)';
+			findLabelText.text = "Find: \"" + findQuery + "\"  (" + findResults.length + " matches)";
 		} else {
 			for (code in 32...127) {
 				if (FlxG.keys.justPressed(cast code)) {
@@ -558,7 +554,6 @@ function update(elapsed:Float) {
 		return;
 	}
 
-	// Arrow navigation
 	if (FlxG.keys.justPressed.DOWN) {
 		cursorLine = Math.min(lines.length - 1, cursorLine + 1);
 		refreshCode();
@@ -578,7 +573,6 @@ function update(elapsed:Float) {
 		refreshStatus();
 	}
 
-	// Page up/down
 	if (FlxG.keys.justPressed.PAGEDOWN) {
 		var visLines = Std.int((FlxG.height - TOP_H - TAB_H - STATUS_H) / lineH);
 		cursorLine = Math.min(lines.length - 1, cursorLine + visLines);
@@ -592,7 +586,6 @@ function update(elapsed:Float) {
 		refreshStatus();
 	}
 
-	// Scroll with mouse wheel
 	if (FlxG.mouse.wheel != 0) {
 		scrollY -= FlxG.mouse.wheel * lineH * 3;
 		if (scrollY < 0) scrollY = 0;

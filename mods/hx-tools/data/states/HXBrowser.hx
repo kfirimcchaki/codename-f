@@ -19,12 +19,6 @@ var listScrollY:Float = 0;
 
 // ============ UI ============
 var bg:FlxSprite;
-var headerBg:FlxSprite;
-var catBg:FlxSprite;
-var listBg:FlxSprite;
-var previewBg:FlxSprite;
-var infoBg:FlxSprite;
-var statusBg:FlxSprite;
 var titleText:FlxText;
 var hintText:FlxText;
 var catTitleText:FlxText;
@@ -37,7 +31,6 @@ var searchLabelText:FlxText;
 var catItemsGroup:FlxTypedGroup<FlxSprite>;
 var listItemsGroup:FlxTypedGroup<FlxSprite>;
 
-// Colors
 var COL_BG = FlxColor.fromRGB(22, 22, 30);
 var COL_PANEL = FlxColor.fromRGB(28, 28, 40);
 var COL_PANEL2 = FlxColor.fromRGB(34, 34, 48);
@@ -64,24 +57,21 @@ var STATUS_H = 26;
 function create() {
 	FlxG.mouse.visible = true;
 
-	// Background
 	bg = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, COL_BG);
 	add(bg);
 
-	// Header bar
-	headerBg = new FlxSprite(0, 0).makeGraphic(FlxG.width, TOP_H, FlxColor.fromRGB(16, 16, 24));
+	var headerBg = new FlxSprite(0, 0).makeGraphic(FlxG.width, TOP_H, FlxColor.fromRGB(16, 16, 24));
 	add(headerBg);
 
 	titleText = new FlxText(12, 8, 300, "HX File Browser", 16);
 	titleText.color = COL_ACCENT;
 	add(titleText);
 
-	hintText = new FlxText(FlxG.width - 400, 9, 390, "Ctrl+E: Open in Editor  |  F2: Sort  |  ESC: Exit  |  F3: Back", 11);
+	hintText = new FlxText(FlxG.width - 400, 9, 390, "Ctrl+E: Open in Editor  |  F2: Sort  |  ESC: Exit  |  TAB: Switch Category", 11);
 	hintText.color = COL_DIM;
 	add(hintText);
 
-	// Category panel
-	catBg = new FlxSprite(0, TOP_H).makeGraphic(CAT_W, FlxG.height - TOP_H - STATUS_H, COL_PANEL);
+	var catBg = new FlxSprite(0, TOP_H).makeGraphic(CAT_W, FlxG.height - TOP_H - STATUS_H, COL_PANEL);
 	add(catBg);
 
 	catTitleText = new FlxText(10, TOP_H + 6, CAT_W - 20, "Categories", 13);
@@ -91,7 +81,6 @@ function create() {
 	catItemsGroup = new FlxTypedGroup<FlxSprite>();
 	add(catItemsGroup);
 
-	// Search bar area
 	var searchBg = new FlxSprite(CAT_W, TOP_H).makeGraphic(LIST_W, 28, FlxColor.fromRGB(24, 24, 34));
 	add(searchBg);
 
@@ -99,8 +88,7 @@ function create() {
 	searchLabelText.color = COL_DIM;
 	add(searchLabelText);
 
-	// File list panel
-	listBg = new FlxSprite(CAT_W, TOP_H + 28).makeGraphic(LIST_W, FlxG.height - TOP_H - 28 - STATUS_H - 155, COL_PANEL);
+	var listBg = new FlxSprite(CAT_W, TOP_H + 28).makeGraphic(LIST_W, FlxG.height - TOP_H - 28 - STATUS_H - 155, COL_PANEL);
 	add(listBg);
 
 	listTitleText = new FlxText(CAT_W + 10, TOP_H + 34, LIST_W - 20, "Files", 12);
@@ -110,10 +98,9 @@ function create() {
 	listItemsGroup = new FlxTypedGroup<FlxSprite>();
 	add(listItemsGroup);
 
-	// Preview panel
 	var px = CAT_W + LIST_W;
 	var pw = FlxG.width - px;
-	previewBg = new FlxSprite(px, TOP_H).makeGraphic(pw, FlxG.height - TOP_H - STATUS_H, COL_PANEL2);
+	var previewBg = new FlxSprite(px, TOP_H).makeGraphic(pw, FlxG.height - TOP_H - STATUS_H, COL_PANEL2);
 	add(previewBg);
 
 	previewTitleText = new FlxText(px + 10, TOP_H + 8, pw - 20, "Preview -- select a file", 14);
@@ -124,9 +111,8 @@ function create() {
 	previewCodeText.color = FlxColor.fromRGB(185, 185, 200);
 	add(previewCodeText);
 
-	// Info panel
 	var iy = FlxG.height - STATUS_H - 155;
-	infoBg = new FlxSprite(CAT_W, iy).makeGraphic(LIST_W, 155, FlxColor.fromRGB(24, 24, 34));
+	var infoBg = new FlxSprite(CAT_W, iy).makeGraphic(LIST_W, 155, FlxColor.fromRGB(24, 24, 34));
 	add(infoBg);
 
 	var infoTitle = new FlxText(CAT_W + 10, iy + 4, LIST_W - 20, "File Info", 11);
@@ -137,36 +123,28 @@ function create() {
 	infoLabelText.color = FlxColor.fromRGB(155, 155, 175);
 	add(infoLabelText);
 
-	// Status bar
-	statusBg = new FlxSprite(0, FlxG.height - STATUS_H).makeGraphic(FlxG.width, STATUS_H, FlxColor.fromRGB(16, 16, 24));
+	var statusBg = new FlxSprite(0, FlxG.height - STATUS_H).makeGraphic(FlxG.width, STATUS_H, FlxColor.fromRGB(16, 16, 24));
 	add(statusBg);
 
 	statusLabelText = new FlxText(10, FlxG.height - STATUS_H + 5, FlxG.width - 20, "", 11);
 	statusLabelText.color = COL_DIM;
 	add(statusLabelText);
 
-	// Scan files
 	scanAllFiles();
-
-	if (rootCats.length > 0) {
-		selectCategory(rootCats[0]);
-	}
-
+	if (rootCats.length > 0) selectCategory(rootCats[0]);
 	refreshStatus();
 }
 
 // =============================================================================
-//  SCANNING
+//  SCANNING - uses sys.FileSystem directly (engine is always sys)
 // =============================================================================
 function scanAllFiles() {
 	allFiles = [];
 	categories = [];
 	rootCats = [];
 
-	#if sys
 	scanDir("source/");
 	scanDir("mods/");
-	#end
 
 	for (f in allFiles) categorize(f);
 	rootCats.sort(function(a, b) return Reflect.compare(a.order, b.order));
@@ -174,21 +152,20 @@ function scanAllFiles() {
 	filteredFiles = allFiles.copy();
 }
 
-#if sys
 function scanDir(dir:String) {
 	try {
 		if (!sys.FileSystem.exists(dir)) return;
 		for (entry in sys.FileSystem.readDirectory(dir)) {
 			var full = dir + entry;
-			if (sys.FileSystem.isDirectory(full)) scanDir(full + "/");
-			else if (entry.endsWith(".hx") && !fileExists(full)) {
+			if (sys.FileSystem.isDirectory(full)) {
+				scanDir(full + "/");
+			} else if (entry.endsWith(".hx") && !fileExists(full)) {
 				var info = makeFileInfo(full);
 				if (info != null) allFiles.push(info);
 			}
 		}
 	} catch(e:Dynamic) {}
 }
-#end
 
 function fileExists(path:String):Bool {
 	for (f in allFiles) if (f.path == path) return true;
@@ -197,39 +174,38 @@ function fileExists(path:String):Bool {
 
 function makeFileInfo(path:String):Dynamic {
 	try {
-		var c:String = "";
-		#if sys
-		try { c = sys.io.File.getContent(path); } catch(e) { return null; }
-		#else
-		try { c = Assets.getText(path); } catch(e) { return null; }
-		#end
+		var c:String = sys.io.File.getContent(path);
 		if (c == null || c.length == 0) return null;
 
 		var lns = c.split("\n");
 		var pkg = ""; var cls = ""; var ext = "";
-		var m1 = ~/^package\s+([\w.]+)\s*;/m;
-		if (m1.match(c)) pkg = m1.matched(1);
-		var m2 = ~/(?:class|interface|abstract|enum)\s+(\w+)/;
-		if (m2.match(c)) cls = m2.matched(1);
-		var m3 = ~/class\s+\w+\s+extends\s+([\w.]+)/;
-		if (m3.match(c)) ext = m3.matched(1);
+
+		// Use EReg instead of regex literals (HScript requirement)
+		var pkgReg = new EReg("^package\\s+([\\w.]+)\\s*;", "m");
+		if (pkgReg.match(c)) pkg = pkgReg.matched(1);
+
+		var clsReg = new EReg("(?:class|interface|abstract|enum)\\s+(\\w+)", "");
+		if (clsReg.match(c)) cls = clsReg.matched(1);
+
+		var extReg = new EReg("class\\s+\\w+\\s+extends\\s+([\\w.]+)", "");
+		if (extReg.match(c)) ext = extReg.matched(1);
 
 		var funcs:Array<Dynamic> = [];
-		var fm = ~/((?:public|private|static|inline|override)\s+)*function\s+(\w+)/g;
+		var funcReg = new EReg("((?:public|private|static|inline|override)\\s+)*function\\s+(\\w+)", "g");
 		var pos = 0;
-		while (fm.matchSub(c, pos)) {
-			var mods = fm.matched(1) != null ? fm.matched(1) : "";
-			funcs.push({ name: fm.matched(2), pub: mods.indexOf("public") >= 0, stat: mods.indexOf("static") >= 0, over: mods.indexOf("override") >= 0 });
-			pos = fm.matchedPos().pos + fm.matchedPos().len;
+		while (funcReg.matchSub(c, pos)) {
+			var mods = funcReg.matched(1) != null ? funcReg.matched(1) : "";
+			funcs.push({ name: funcReg.matched(2), pub: mods.indexOf("public") >= 0, stat: mods.indexOf("static") >= 0, over: mods.indexOf("override") >= 0 });
+			pos = funcReg.matchedPos().pos + funcReg.matchedPos().len;
 		}
 
 		var vars:Array<Dynamic> = [];
-		var vm = ~/((?:public|private|static)\s+)*var\s+(\w+)\s*(?::\s*(\w+))?/g;
+		var varReg = new EReg("((?:public|private|static)\\s+)*var\\s+(\\w+)\\s*(?::\\s*(\\w+))?", "g");
 		pos = 0;
-		while (vm.matchSub(c, pos)) {
-			var mods = vm.matched(1) != null ? vm.matched(1) : "";
-			vars.push({ name: vm.matched(2), type: vm.matched(3), pub: mods.indexOf("public") >= 0 });
-			pos = vm.matchedPos().pos + vm.matchedPos().len;
+		while (varReg.matchSub(c, pos)) {
+			var mods = varReg.matched(1) != null ? varReg.matched(1) : "";
+			vars.push({ name: varReg.matched(2), type: varReg.matched(3), pub: mods.indexOf("public") >= 0 });
+			pos = varReg.matchedPos().pos + varReg.matchedPos().len;
 		}
 
 		var cat = detectCat(path, c);
@@ -392,7 +368,7 @@ function refreshStatus() {
 	var parts = ["Files: " + filteredFiles.length + "/" + allFiles.length];
 	if (selectedCat != null) parts.push("Cat: " + selectedCat.name);
 	if (selectedFile != null) parts.push("File: " + selectedFile.fileName);
-	parts.push("Ctrl+E: Editor | ESC: Exit");
+	parts.push("Ctrl+E: Editor | ESC: Exit | TAB: Switch Cat");
 	statusLabelText.text = parts.join("  |  ");
 }
 
@@ -408,25 +384,21 @@ function formatSize(bytes:Int):String {
 var searchMode:Bool = false;
 
 function update(elapsed:Float) {
-	// Exit
 	if (FlxG.keys.justPressed.ESCAPE) {
 		FlxG.switchState(new funkin.menus.MainMenuState());
 		return;
 	}
 
-	// Open in editor
 	if (FlxG.keys.pressed.CONTROL && FlxG.keys.justPressed.E && selectedFile != null) {
 		FlxG.switchState(new funkin.backend.scripting.ModState("HXEditor", {path: selectedFile.path}));
 		return;
 	}
 
-	// Enter also opens editor
 	if (FlxG.keys.justPressed.ENTER && selectedFile != null) {
 		FlxG.switchState(new funkin.backend.scripting.ModState("HXEditor", {path: selectedFile.path}));
 		return;
 	}
 
-	// Sort cycle
 	if (FlxG.keys.justPressed.F2) {
 		sortMode = (sortMode + 1) % 3;
 		sortFiles();
@@ -434,7 +406,19 @@ function update(elapsed:Float) {
 		return;
 	}
 
-	// Search mode toggle
+	// Switch categories with TAB
+	if (FlxG.keys.justPressed.TAB) {
+		catIndex = (catIndex + 1) % rootCats.length;
+		selectCategory(rootCats[catIndex]);
+		return;
+	}
+
+	// Expand/collapse with LEFT
+	if (FlxG.keys.justPressed.LEFT) {
+		if (selectedCat != null) selectedCat.expanded = !selectedCat.expanded;
+		refreshCats();
+	}
+
 	if (FlxG.keys.justPressed.S && !searchMode) {
 		searchMode = true;
 		searchQuery = "";
@@ -464,7 +448,6 @@ function update(elapsed:Float) {
 			doSearch();
 			return;
 		}
-		// Type characters
 		for (code in 32...127) {
 			if (FlxG.keys.justPressed(cast code)) {
 				searchQuery += String.fromCharCode(code);
@@ -476,13 +459,6 @@ function update(elapsed:Float) {
 		return;
 	}
 
-	// Navigate categories with LEFT/RIGHT
-	if (FlxG.keys.justPressed.LEFT) {
-		if (selectedCat != null) selectedCat.expanded = !selectedCat.expanded;
-		refreshCats();
-	}
-
-	// Navigate file list with UP/DOWN
 	if (FlxG.keys.justPressed.DOWN) {
 		if (filteredFiles.length > 0) {
 			fileIndex = Math.min(filteredFiles.length - 1, fileIndex + 1);
@@ -496,13 +472,6 @@ function update(elapsed:Float) {
 		}
 	}
 
-	// Switch categories with TAB
-	if (FlxG.keys.justPressed.TAB) {
-		catIndex = (catIndex + 1) % rootCats.length;
-		selectCategory(rootCats[catIndex]);
-	}
-
-	// Scroll with mouse wheel
 	if (FlxG.mouse.wheel != 0) {
 		listScrollY -= FlxG.mouse.wheel * 44;
 		if (listScrollY < 0) listScrollY = 0;
