@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Camera", "type": "DropDown('camGame', 'camHUD', 'both')", "defaultValue": "camGame"},
+		{"name": "Intensity", "type": "Float(0, 2, 0.01, 2)", "defaultValue": 0.05},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Intensity X", "type": "Float(0, 2, 0.01, 2)", "defaultValue": 0.05},
+		{"name": "Intensity Y", "type": "Float(0, 2, 0.01, 2)", "defaultValue": 0.05},
+		{"name": "Rotation Shake", "type": "Float(0, 360, 1, 0)", "defaultValue": 0}
+	]
+}

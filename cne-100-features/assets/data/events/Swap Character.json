@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Position", "type": "DropDown('boyfriend', 'dad', 'girlfriend', 'custom')", "defaultValue": "boyfriend"},
+		{"name": "New Character", "type": "String", "defaultValue": "bf"},
+		{"name": "Transition", "type": "DropDown('instant', 'fade', 'slide', 'flash')", "defaultValue": "instant"},
+		{"name": "Transition Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 2}
+	]
+}

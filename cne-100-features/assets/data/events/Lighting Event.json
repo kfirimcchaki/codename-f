@@ -1,0 +1,11 @@
+{
+	"params": [
+		{"name": "Action", "type": "DropDown('set_ambient', 'set_directional', 'add_point_light', 'spotlight', 'remove_light')", "defaultValue": "add_point_light"},
+		{"name": "Color", "type": "ColorWheel", "defaultValue": "#FFFFFF"},
+		{"name": "Intensity", "type": "Float(0, 10, 0.1, 2)", "defaultValue": 1},
+		{"name": "X", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 0},
+		{"name": "Y", "type": "Float(-9999, 9999, 10, 0)", "defaultValue": 0},
+		{"name": "Radius", "type": "Float(0, 10000, 10, 0)", "defaultValue": 500},
+		{"name": "Duration (steps)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 0}
+	]
+}

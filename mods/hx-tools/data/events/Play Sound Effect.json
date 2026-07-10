@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Sound Path", "type": "String", "defaultValue": "sounds/example"},
+		{"name": "Volume", "type": "Float(0, 2, 0.05, 2)", "defaultValue": 1},
+		{"name": "Pan", "type": "Float(-1, 1, 0.05, 2)", "defaultValue": 0},
+		{"name": "Pitch", "type": "Float(0.1, 5, 0.05, 2)", "defaultValue": 1}
+	]
+}

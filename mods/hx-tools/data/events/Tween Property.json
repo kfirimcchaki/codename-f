@@ -1,0 +1,11 @@
+{
+	"params": [
+		{"name": "Target", "type": "String", "defaultValue": "boyfriend"},
+		{"name": "Property", "type": "String", "defaultValue": "x"},
+		{"name": "Value", "type": "Float(-99999, 99999, 1, 2)", "defaultValue": 0},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Ease", "type": "DropDown('linear', 'back', 'bounce', 'circ', 'cube', 'elastic', 'expo', 'quad', 'quart', 'quint', 'sine', 'smoothStep', 'smootherStep')", "defaultValue": "quadOut"},
+		{"name": "Type", "type": "DropDown('In', 'Out', 'InOut')", "defaultValue": "Out"},
+		{"name": "Is Offset?", "type": "Bool", "defaultValue": false}
+	]
+}

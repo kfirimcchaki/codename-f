@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Preset", "type": "DropDown('confetti', 'sparks', 'smoke', 'fire', 'bubbles', 'rain', 'snow', 'leaves', 'music_notes', 'explosion', 'hearts', 'stars')", "defaultValue": "sparks"},
+		{"name": "X Position", "type": "Float(-10000, 10000, 10, 0)", "defaultValue": 0},
+		{"name": "Y Position", "type": "Float(-10000, 10000, 10, 0)", "defaultValue": 0},
+		{"name": "Count", "type": "Int(1, 1000, 1)", "defaultValue": 10},
+		{"name": "Duration (steps, 0=burst)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 0},
+		{"name": "Emitter Shape", "type": "DropDown('point', 'line', 'circle', 'cone', 'box', 'ring')", "defaultValue": "point"}
+	]
+}

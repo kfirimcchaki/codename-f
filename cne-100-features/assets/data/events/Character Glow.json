@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "Character", "type": "Int(0, 10, 1)", "defaultValue": 0},
+		{"name": "Color", "type": "ColorWheel", "defaultValue": "#FFFFFF"},
+		{"name": "Intensity", "type": "Float(0, 5, 0.1, 2)", "defaultValue": 1},
+		{"name": "Duration (steps)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Fade In (steps)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 1}
+	]
+}

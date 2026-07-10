@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Shader Target", "type": "DropDown('camGame', 'camHUD', 'stage', 'boyfriend', 'dad', 'girlfriend')", "defaultValue": "camGame"},
+		{"name": "Uniform Name", "type": "String", "defaultValue": "u_time"},
+		{"name": "Value Type", "type": "DropDown('float', 'int', 'bool', 'vec2', 'vec3', 'vec4')", "defaultValue": "float"},
+		{"name": "Value", "type": "String", "defaultValue": "0"},
+		{"name": "Tween to Value?", "type": "Bool", "defaultValue": false},
+		{"name": "Tween Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4}
+	]
+}

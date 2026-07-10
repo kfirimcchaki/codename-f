@@ -1,0 +1,10 @@
+{
+	"params": [
+		{"name": "Effect", "type": "DropDown('volume', 'pitch', 'pan', 'lowpass', 'highpass', 'reverb', 'distortion', 'mute_track')", "defaultValue": "volume"},
+		{"name": "Target", "type": "DropDown('inst', 'player_vocals', 'opponent_vocals', 'all')", "defaultValue": "all"},
+		{"name": "Value", "type": "Float(-10, 10, 0.01, 2)", "defaultValue": 1},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'sineOut')", "defaultValue": "linear"}
+	]
+}

@@ -1,0 +1,40 @@
+{
+	"presets": [
+		{
+			"id": "default",
+			"name": "Default HUD",
+			"description": "Standard FNF HUD layout",
+			"category": "Standard",
+			"settings": {
+				"healthBar": {"x": 640, "y": 680, "width": 600, "height": 20, "anchor": "center", "visible": true, "showIcons": true},
+				"scoreText": {"x": 5, "y": 5, "visible": true, "fontSize": 16, "format": "Score: {score} | Misses: {misses} | Accuracy: {accuracy}%"},
+				"timeBar": {"x": 640, "y": 30, "width": 400, "height": 16, "anchor": "center", "visible": true, "showTime": true},
+				"comboGroup": {"x": 640, "y": 360, "scale": 0.7, "visible": true}
+			}
+		},
+		{
+			"id": "minimal",
+			"name": "Minimal HUD",
+			"description": "Clean, minimal HUD for immersion",
+			"category": "Minimal",
+			"settings": {
+				"healthBar": {"x": 640, "y": 700, "width": 400, "height": 10, "anchor": "center", "visible": true, "showIcons": false},
+				"scoreText": {"x": 5, "y": 5, "visible": true, "fontSize": 12, "format": "{accuracy}%"},
+				"timeBar": {"visible": false},
+				"comboGroup": {"x": 640, "y": 360, "scale": 0.5, "visible": true}
+			}
+		},
+		{
+			"id": "competitive",
+			"name": "Competitive HUD",
+			"description": "Detailed HUD for competitive play",
+			"category": "Competitive",
+			"settings": {
+				"healthBar": {"x": 640, "y": 680, "width": 600, "height": 24, "anchor": "center", "visible": true, "showIcons": true},
+				"scoreText": {"x": 5, "y": 5, "visible": true, "fontSize": 14, "format": "Score: {score} | Combo: {combo} | Misses: {misses} | {accuracy}% | {rating}"},
+				"timeBar": {"x": 640, "y": 25, "width": 500, "height": 12, "anchor": "center", "visible": true, "showTime": true},
+				"comboGroup": {"x": 640, "y": 360, "scale": 0.8, "visible": true}
+			}
+		}
+	]
+}

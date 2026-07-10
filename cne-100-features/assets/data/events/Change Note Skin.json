@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Note Skin", "type": "String", "defaultValue": "NOTE_assets"},
+		{"name": "Strum Line", "type": "Int(-1, 10, 1)", "defaultValue": -1},
+		{"name": "Transition", "type": "DropDown('instant', 'fade', 'pop')", "defaultValue": "instant"},
+		{"name": "Also Change Splashes", "type": "Bool", "defaultValue": true}
+	]
+}

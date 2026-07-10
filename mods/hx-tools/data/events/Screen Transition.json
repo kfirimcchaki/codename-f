@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "Type", "type": "DropDown('fade', 'slide_left', 'slide_right', 'slide_up', 'slide_down', 'wipe', 'circle', 'pixelate', 'custom')", "defaultValue": "fade"},
+		{"name": "Direction", "type": "DropDown('in', 'out')", "defaultValue": "out"},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Color", "type": "ColorWheel", "defaultValue": "#000000"},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'cubicOut')", "defaultValue": "linear"}
+	]
+}

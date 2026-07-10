@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "Effect", "type": "DropDown('chromatic_aberration', 'vignette', 'blur', 'pixelate', 'glitch', 'scanlines', 'film_grain', 'bloom', 'crt')", "defaultValue": "blur"},
+		{"name": "Intensity", "type": "Float(0, 10, 0.01, 2)", "defaultValue": 1},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Camera", "type": "DropDown('camGame', 'camHUD', 'both')", "defaultValue": "camGame"}
+	]
+}

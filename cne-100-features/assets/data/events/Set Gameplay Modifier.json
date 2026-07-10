@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Modifier ID", "type": "String", "defaultValue": "drunk"},
+		{"name": "Value", "type": "Float(-9999, 9999, 0.01, 2)", "defaultValue": 1},
+		{"name": "Tween?", "type": "Bool", "defaultValue": true},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4}
+	]
+}

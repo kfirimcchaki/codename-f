@@ -1,0 +1,13 @@
+<!DOCTYPE codename-engine-stage>
+<stage zoom="0.9" name="park" folder="stages/park/" startCamPosX="600" startCamPosY="300">
+	<!-- Outdoor Park Stage - Natural environment -->
+	<sprite name="sky"           x="-200"  y="-300"  sprite="sky"          scroll="0.1" />
+	<sprite name="clouds"        x="-100"  y="-200"  sprite="clouds"       scroll="0.2" />
+	<sprite name="trees_back"    x="-300"  y="-50"   sprite="trees_back"   scroll="0.4" />
+	<sprite name="trees_front"   x="-200"  y="100"   sprite="trees_front"  scroll="0.8" />
+	<girlfriend />
+	<dad />
+	<boyfriend />
+	<sprite name="grass"         x="-400"  y="400"   sprite="grass"        scroll="1.0" />
+	<sprite name="flowers"       x="-100"  y="500"   sprite="flowers"      scroll="1.1" />
+</stage>
