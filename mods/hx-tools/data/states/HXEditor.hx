@@ -1,171 +1,524 @@
 // =============================================================================
-//  HX EDITOR - Custom State for Codename Engine
-//  Place in: mods/hx-tools/data/states/HXEditor.hx
+//  HX CODE EDITOR v2.0 - Codename Engine Custom State
+//  mods/hx-tools/data/states/HXEditor.hx
 //  Redirect: [StateRedirects] FreeplayState="HXEditor"
 //  Or open:  FlxG.switchState(new ModState("HXEditor", {path: "file.hx"}))
 // =============================================================================
+//  A professional code editor for .hx files with:
+//  - Full text editing (insert, delete, newline, cursor movement)
+//  - Syntax highlighting (keywords, types, strings, comments, numbers)
+//  - Line numbers with current line highlight
+//  - Visual structure panel (package, imports, class, functions, variables)
+//  - Find & Replace with regex support
+//  - Undo/Redo (200 levels)
+//  - Auto-indent on newline
+//  - Bracket auto-close and matching
+//  - Code folding indicators
+//  - Minimap overview
+//  - Tab management for multiple files
+//  - File templates
+//  - Syntax validation (bracket/brace/paren balancing)
+//  - Code formatting (auto-indent)
+//  - Go to line / Go to function
+//  - Bookmarks
+//  - Keyboard shortcuts overlay
+//  - Settings panel
+//  - Status bar with full info
+// =============================================================================
 
-// ============ STATE ============
+// ======================== CONSTANTS ========================
+var W = 1280;
+var H = 720;
+var HEADER_H = 38;
+var TAB_BAR_H = 28;
+var FOOTER_H = 26;
+var VISUAL_W = 280;
+var MINIMAP_W = 100;
+var LINE_NUM_W = 48;
+var LINE_H = 16;
+var FONT_SIZE = 12;
+var FIND_BAR_H = 56;
+
+// ======================== COLORS ========================
+var C_BG = FlxColor.fromRGB(22, 22, 30);
+var C_PANEL = FlxColor.fromRGB(28, 28, 40);
+var C_PANEL2 = FlxColor.fromRGB(24, 24, 34);
+var C_PANEL3 = FlxColor.fromRGB(32, 32, 46);
+var C_HEADER = FlxColor.fromRGB(14, 14, 22);
+var C_FOOTER = FlxColor.fromRGB(14, 14, 22);
+var C_EDITOR = FlxColor.fromRGB(26, 26, 36);
+var C_BORDER = FlxColor.fromRGB(45, 45, 65);
+var C_TEXT = FlxColor.fromRGB(215, 215, 230);
+var C_TEXT2 = FlxColor.fromRGB(180, 180, 200);
+var C_DIM = FlxColor.fromRGB(100, 100, 130);
+var C_DIMMER = FlxColor.fromRGB(70, 70, 95);
+var C_ACCENT = FlxColor.fromRGB(80, 150, 255);
+var C_ACCENT2 = FlxColor.fromRGB(120, 180, 255);
+var C_SELECT = FlxColor.fromRGB(45, 60, 100);
+var C_SELECT2 = FlxColor.fromRGB(55, 70, 115);
+var C_HOVER = FlxColor.fromRGB(38, 38, 55);
+var C_LINE_HL = FlxColor.fromRGB(32, 32, 48);
+var C_LINE_NUM = FlxColor.fromRGB(60, 60, 85);
+var C_LINE_NUM_CUR = FlxColor.fromRGB(120, 120, 150);
+var C_SUCCESS = FlxColor.fromRGB(80, 220, 120);
+var C_WARNING = FlxColor.fromRGB(255, 200, 80);
+var C_ERROR = FlxColor.fromRGB(255, 80, 80);
+var C_FIND_HL = FlxColor.fromRGB(255, 200, 50);
+var C_BOOKMARK = FlxColor.fromRGB(255, 120, 80);
+var C_FOLD = FlxColor.fromRGB(80, 80, 110);
+var C_BRACKET = FlxColor.fromRGB(255, 220, 100);
+
+// Syntax colors
+var SYN_DEFAULT = FlxColor.fromRGB(215, 215, 230);
+var SYN_KEYWORD = FlxColor.fromRGB(200, 120, 255);
+var SYN_TYPE = FlxColor.fromRGB(100, 200, 255);
+var SYN_STRING = FlxColor.fromRGB(180, 230, 130);
+var SYN_COMMENT = FlxColor.fromRGB(90, 100, 120);
+var SYN_NUMBER = FlxColor.fromRGB(255, 200, 100);
+var SYN_FUNC = FlxColor.fromRGB(255, 220, 120);
+var SYN_OPERATOR = FlxColor.fromRGB(200, 200, 220);
+var SYN_PREPROC = FlxColor.fromRGB(180, 140, 200);
+var SYN_METADATA = FlxColor.fromRGB(160, 180, 220);
+
+// ======================== STATE ========================
 var filePath:String = "";
+var fileName:String = "Untitled.hx";
 var content:String = "";
 var originalContent:String = "";
 var isDirty:Bool = false;
 var lines:Array<String> = [];
+var totalLines:Int = 0;
+
+// Cursor
 var cursorLine:Int = 0;
 var cursorCol:Int = 0;
-var scrollY:Float = 0;
-var lineH:Int = 16;
+var selectionStartLine:Int = -1;
+var selectionStartCol:Int = -1;
+var selectionEndLine:Int = -1;
+var selectionEndCol:Int = -1;
+var hasSelection:Bool = false;
 
-var tabs:Array<Dynamic> = [];
-var activeTab:Dynamic = null;
+// Scroll
+var scrollY:Float = 0;
+var scrollX:Float = 0;
+
+// Undo/Redo
 var undoStack:Array<Dynamic> = [];
 var redoStack:Array<Dynamic> = [];
+var MAX_UNDO = 200;
 
+// Find
 var findQuery:String = "";
+var replaceQuery:String = "";
 var findResults:Array<Dynamic> = [];
 var findMode:Bool = false;
+var findCaseSensitive:Bool = false;
+var findUseRegex:Bool = false;
+var currentFindIdx:Int = -1;
+var findBarVisible:Bool = false;
 
+// Parsed structure
 var parsedPkg:String = "";
 var parsedClass:String = "";
 var parsedExtends:String = "";
+var parsedImplements:String = "";
 var parsedFuncs:Array<Dynamic> = [];
 var parsedVars:Array<Dynamic> = [];
-var parsedImports:Int = 0;
+var parsedImports:Array<Dynamic> = [];
 
-// ============ UI ============
-var titleText:FlxText;
-var hintText:FlxText;
+// Tabs
+var tabs:Array<Dynamic> = [];
+var activeTabIndex:Int = -1;
+
+// Bookmarks
+var bookmarks:Map<Int, Bool> = [];
+
+// Code folding
+var foldedLines:Map<Int, Bool> = [];
+
+// Visual panel state
+var visualExpanded:Map<String, Bool> = ["imports" => true, "vars" => true, "funcs" => true];
+var visualScrollY:Float = 0;
+
+// Settings
+var showLineNumbers:Bool = true;
+var showMinimap:Bool = true;
+var showVisualPanel:Bool = true;
+var autoIndent:Bool = true;
+var autoCloseBrackets:Bool = true;
+var tabSize:Int = 4;
+var wordWrap:Bool = false;
+var highlightCurrentLine:Bool = true;
+var showWhitespace:Bool = false;
+var fontSize:Int = 12;
+
+// Keyboard shortcuts overlay
+var shortcutsVisible:Bool = false;
+var settingsVisible:Bool = false;
+var gotoLineMode:Bool = false;
+var gotoLineInput:String = "";
+
+// Clipboard
+var clipboard:String = "";
+
+// Notification
+var notifText:String = "";
+var notifTimer:Float = 0;
+
+// ======================== UI REFERENCES ========================
+var bgSpr:FlxSprite;
+var headerBg:FlxSprite;
+var headerTitle:FlxText;
+var headerFilePath:FlxText;
+var headerModified:FlxText;
+var headerHints:FlxText;
+
+var tabBarBg:FlxSprite;
+var tabGroup:FlxTypedGroup<FlxSprite>;
+
+var visualBg:FlxSprite;
+var visualBorder:FlxSprite;
+var visualTitleText:FlxText;
+var visualGroup:FlxTypedGroup<FlxSprite>;
+
+var editorBg:FlxSprite;
+var highlightSpr:FlxSprite;
+var lineNumBg:FlxSprite;
 var lineNumText:FlxText;
 var codeText:FlxText;
-var highlightSpr:FlxSprite;
-var minimapCodeText:FlxText;
-var statusLabelText:FlxText;
-var findLabelText:FlxText;
+var cursorSpr:FlxSprite;
+var selectionSpr:FlxSprite;
+var bracketMatchSpr:FlxSprite;
+
+var minimapBg:FlxSprite;
+var minimapBorder:FlxSprite;
+var minimapTitle:FlxText;
+var minimapCode:FlxText;
+var minimapViewport:FlxSprite;
+
+var findBarBg:FlxSprite;
+var findBarBorder:FlxSprite;
+var findLabel:FlxText;
+var findInputText:FlxText;
 var findResultText:FlxText;
-var findBg:FlxSprite;
-var visualItemsGroup:FlxTypedGroup<FlxSprite>;
-var tabItemsGroup:FlxTypedGroup<FlxSprite>;
+var findOptionsText:FlxText;
 
-var COL_BG = FlxColor.fromRGB(24, 24, 32);
-var COL_PANEL = FlxColor.fromRGB(30, 30, 42);
-var COL_PANEL2 = FlxColor.fromRGB(22, 22, 30);
-var COL_EDITOR = FlxColor.fromRGB(26, 26, 36);
-var COL_TEXT = FlxColor.fromRGB(215, 215, 230);
-var COL_DIM = FlxColor.fromRGB(100, 100, 125);
-var COL_ACCENT = FlxColor.fromRGB(80, 150, 255);
-var COL_LINE_HL = FlxColor.fromRGB(36, 36, 50);
-var COL_SUCCESS = FlxColor.fromRGB(80, 255, 120);
-var COL_ERROR = FlxColor.fromRGB(255, 80, 80);
+var footerBg:FlxSprite;
+var footerLeft:FlxText;
+var footerCenter:FlxText;
+var footerRight:FlxText;
 
-var VISUAL_W = 290;
-var MINIMAP_W = 100;
-var TOP_H = 34;
-var TAB_H = 26;
-var STATUS_H = 26;
+var shortcutsOverlay:FlxSprite;
+var shortcutsText:FlxText;
+var settingsOverlay:FlxSprite;
+var settingsText:FlxText;
+var notifBg:FlxSprite;
+var notifLabel:FlxText;
+
+// Keywords
+var KEYWORDS:Array<String> = ["package", "import", "class", "interface", "enum", "abstract", "typedef", "extends", "implements", "function", "var", "final", "static", "public", "private", "override", "inline", "dynamic", "extern", "macro", "using", "if", "else", "switch", "case", "default", "for", "while", "do", "break", "continue", "return", "throw", "try", "catch", "new", "this", "super", "null", "true", "false", "cast", "in", "untyped", "trace"];
+var TYPES:Array<String> = ["Void", "Int", "Float", "Bool", "String", "Dynamic", "Any", "Array", "Map", "EReg", "Date", "Math", "Std", "Type", "Reflect", "FlxSprite", "FlxText", "FlxG", "FlxTween", "FlxEase", "FlxColor", "FlxMath", "FlxTimer", "FlxPoint", "FlxCamera", "FlxGroup", "FlxTypedGroup", "FlxSpriteGroup", "FlxSound", "FlxBasic", "FlxObject", "FlxState", "FlxSubState", "FunkinSprite", "FunkinText", "Alphabet", "Character", "MusicBeatState", "ModState", "PlayState", "Paths", "Options", "Flags"];
+
+// Bracket pairs
+var BRACKET_PAIRS:Map<String, String> = ["(" => ")", "[" => "]", "{" => "}"];
+var CLOSE_BRACKETS:Map<String, String> = [")" => "(", "]" => "[", "}" => "{"];
 
 // =============================================================================
 //  CREATE
 // =============================================================================
 function create() {
 	FlxG.mouse.visible = true;
+	W = FlxG.width;
+	H = FlxG.height;
 
-	if (data != null && Reflect.hasField(data, "path")) filePath = data.path;
+	VISUAL_W = Math.round(W * 0.22);
+	MINIMAP_W = Math.round(W * 0.08);
 
-	var bg = new FlxSprite(0, 0).makeGraphic(FlxG.width, FlxG.height, COL_BG);
-	add(bg);
+	createBackground();
+	createHeader();
+	createTabBar();
+	createVisualPanel();
+	createEditor();
+	createMinimap();
+	createFindBar();
+	createFooter();
+	createOverlays();
 
-	var headerBg = new FlxSprite(0, 0).makeGraphic(FlxG.width, TOP_H, FlxColor.fromRGB(16, 16, 24));
-	add(headerBg);
-
-	titleText = new FlxText(12, 8, 200, "HX Editor", 15);
-	titleText.color = COL_ACCENT;
-	add(titleText);
-
-	hintText = new FlxText(FlxG.width - 540, 9, 530, "Ctrl+S:Save  Ctrl+Z:Undo  Ctrl+F:Find  F5:Validate  F6:Format  ESC:Exit", 10);
-	hintText.color = COL_DIM;
-	add(hintText);
-
-	var tabBarBg = new FlxSprite(0, TOP_H).makeGraphic(FlxG.width, TAB_H, FlxColor.fromRGB(20, 20, 30));
-	add(tabBarBg);
-
-	tabItemsGroup = new FlxTypedGroup<FlxSprite>();
-	add(tabItemsGroup);
-
-	var visualBg = new FlxSprite(0, TOP_H + TAB_H).makeGraphic(VISUAL_W, FlxG.height - TOP_H - TAB_H - STATUS_H, COL_PANEL);
-	add(visualBg);
-
-	var visTitle = new FlxText(10, TOP_H + TAB_H + 6, VISUAL_W - 20, "Structure", 12);
-	visTitle.color = COL_DIM;
-	add(visTitle);
-
-	visualItemsGroup = new FlxTypedGroup<FlxSprite>();
-	add(visualItemsGroup);
-
-	var ex = VISUAL_W;
-	var ey = TOP_H + TAB_H;
-	var ew = FlxG.width - VISUAL_W - MINIMAP_W;
-	var eh = FlxG.height - TOP_H - TAB_H - STATUS_H;
-
-	var edBg = new FlxSprite(ex, ey).makeGraphic(ew, eh, COL_EDITOR);
-	add(edBg);
-
-	highlightSpr = new FlxSprite(ex + 48, ey).makeGraphic(ew - 52, lineH, COL_LINE_HL);
-	highlightSpr.alpha = 0.6;
-	add(highlightSpr);
-
-	lineNumText = new FlxText(ex + 4, ey + 4, 42, "", 10);
-	lineNumText.color = FlxColor.fromRGB(65, 65, 85);
-	add(lineNumText);
-
-	codeText = new FlxText(ex + 52, ey + 4, ew - 56, "", 12);
-	codeText.color = COL_TEXT;
-	add(codeText);
-
-	var mx = FlxG.width - MINIMAP_W;
-	var miniBg = new FlxSprite(mx, ey).makeGraphic(MINIMAP_W, eh, COL_PANEL2);
-	add(miniBg);
-
-	var miniTitle = new FlxText(mx + 6, ey + 4, MINIMAP_W - 12, "Minimap", 9);
-	miniTitle.color = COL_DIM;
-	add(miniTitle);
-
-	minimapCodeText = new FlxText(mx + 4, ey + 18, MINIMAP_W - 8, "", 3);
-	minimapCodeText.color = FlxColor.fromRGB(75, 75, 95);
-	add(minimapCodeText);
-
-	var statusBg = new FlxSprite(0, FlxG.height - STATUS_H).makeGraphic(FlxG.width, STATUS_H, FlxColor.fromRGB(16, 16, 24));
-	add(statusBg);
-
-	statusLabelText = new FlxText(10, FlxG.height - STATUS_H + 5, FlxG.width - 20, "", 11);
-	statusLabelText.color = COL_DIM;
-	add(statusLabelText);
-
-	findBg = new FlxSprite(ex, ey).makeGraphic(ew, 50, FlxColor.fromRGB(38, 38, 54));
-	findBg.visible = false;
-	add(findBg);
-
-	findLabelText = new FlxText(ex + 8, ey + 6, ew - 16, "Find: (type to search, ENTER to confirm, ESC to close)", 11);
-	findLabelText.color = COL_DIM;
-	findLabelText.visible = false;
-	add(findLabelText);
-
-	findResultText = new FlxText(ex + 8, ey + 30, ew - 16, "", 10);
-	findResultText.color = COL_DIM;
-	findResultText.visible = false;
-	add(findResultText);
-
-	// Load file or create new
-	if (filePath != null && filePath.length > 0) {
+	if (data != null && Reflect.hasField(data, "path")) {
+		filePath = Reflect.field(data, "path");
 		loadFile(filePath);
 	} else {
-		content = "package;\n\nclass NewClass {\n\tpublic function new() {\n\t\t\n\t}\n}\n";
+		content = getDefaultTemplate();
 		originalContent = content;
 		lines = content.split("\n");
-		createTab("Untitled.hx", content);
+		totalLines = lines.length;
+		fileName = "Untitled.hx";
+		createTab(fileName, content);
 	}
 
 	parseContent();
 	refreshAll();
+	showNotification("HX Editor ready", 2);
+}
+
+function createBackground() {
+	bgSpr = new FlxSprite(0, 0).makeGraphic(W, H, C_BG);
+	add(bgSpr);
+}
+
+function createHeader() {
+	headerBg = new FlxSprite(0, 0).makeGraphic(W, HEADER_H, C_HEADER);
+	add(headerBg);
+	var headerLine = new FlxSprite(0, HEADER_H - 1).makeGraphic(W, 1, C_ACCENT);
+	headerLine.alpha = 0.4;
+	add(headerLine);
+
+	headerTitle = new FlxText(14, 6, 150, "HX Editor", 16);
+	headerTitle.color = C_ACCENT;
+	headerTitle.bold = true;
+	add(headerTitle);
+
+	headerFilePath = new FlxText(14, 24, 600, "", 10);
+	headerFilePath.color = C_DIM;
+	add(headerFilePath);
+
+	headerModified = new FlxText(170, 8, 60, "", 12);
+	headerModified.color = C_WARNING;
+	add(headerModified);
+
+	headerHints = new FlxText(W - 520, 10, 510, "Ctrl+S:Save  Ctrl+Z:Undo  Ctrl+F:Find  F5:Validate  F6:Format  F1:Help  ESC:Exit", 9);
+	headerHints.color = C_DIMMER;
+	headerHints.alignment = RIGHT;
+	add(headerHints);
+}
+
+function createTabBar() {
+	tabBarBg = new FlxSprite(0, HEADER_H).makeGraphic(W, TAB_BAR_H, FlxColor.fromRGB(20, 20, 30));
+	add(tabBarBg);
+	var tabLine = new FlxSprite(0, HEADER_H + TAB_BAR_H - 1).makeGraphic(W, 1, C_BORDER);
+	tabLine.alpha = 0.3;
+	add(tabLine);
+	tabGroup = new FlxTypedGroup<FlxSprite>();
+	add(tabGroup);
+}
+
+function createVisualPanel() {
+	var vy = HEADER_H + TAB_BAR_H;
+	var vh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+
+	visualBg = new FlxSprite(0, vy).makeGraphic(VISUAL_W, vh, C_PANEL);
+	add(visualBg);
+	visualBorder = new FlxSprite(VISUAL_W - 1, vy).makeGraphic(1, vh, C_BORDER);
+	visualBorder.alpha = 0.4;
+	add(visualBorder);
+
+	visualTitleText = new FlxText(10, vy + 6, VISUAL_W - 20, "STRUCTURE", 11);
+	visualTitleText.color = C_DIM;
+	visualTitleText.bold = true;
+	add(visualTitleText);
+
+	var visSep = new FlxSprite(8, vy + 22).makeGraphic(VISUAL_W - 16, 1, C_BORDER);
+	visSep.alpha = 0.3;
+	add(visSep);
+
+	visualGroup = new FlxTypedGroup<FlxSprite>();
+	add(visualGroup);
+}
+
+function createEditor() {
+	var ex = VISUAL_W;
+	var ey = HEADER_H + TAB_BAR_H;
+	var ew = W - VISUAL_W - MINIMAP_W;
+	var eh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+
+	editorBg = new FlxSprite(ex, ey).makeGraphic(ew, eh, C_EDITOR);
+	add(editorBg);
+
+	lineNumBg = new FlxSprite(ex, ey).makeGraphic(LINE_NUM_W, eh, FlxColor.fromRGB(24, 24, 34));
+	add(lineNumBg);
+
+	var lineNumBorder = new FlxSprite(ex + LINE_NUM_W - 1, ey).makeGraphic(1, eh, C_BORDER);
+	lineNumBorder.alpha = 0.3;
+	add(lineNumBorder);
+
+	highlightSpr = new FlxSprite(ex + LINE_NUM_W, ey).makeGraphic(ew - LINE_NUM_W, LINE_H, C_LINE_HL);
+	highlightSpr.alpha = 0.6;
+	add(highlightSpr);
+
+	selectionSpr = new FlxSprite(ex + LINE_NUM_W, ey).makeGraphic(1, LINE_H, C_SELECT2);
+	selectionSpr.alpha = 0.5;
+	selectionSpr.visible = false;
+	add(selectionSpr);
+
+	bracketMatchSpr = new FlxSprite(0, 0).makeGraphic(FONT_SIZE, LINE_H, C_BRACKET);
+	bracketMatchSpr.alpha = 0.3;
+	bracketMatchSpr.visible = false;
+	add(bracketMatchSpr);
+
+	lineNumText = new FlxText(ex + 4, ey + 4, LINE_NUM_W - 8, "", FONT_SIZE - 2);
+	lineNumText.color = C_LINE_NUM;
+	lineNumText.alignment = RIGHT;
+	add(lineNumText);
+
+	codeText = new FlxText(ex + LINE_NUM_W + 4, ey + 4, ew - LINE_NUM_W - 8, "", FONT_SIZE);
+	codeText.color = C_TEXT;
+	add(codeText);
+
+	cursorSpr = new FlxSprite(0, 0).makeGraphic(2, LINE_H, C_ACCENT);
+	cursorSpr.alpha = 0.9;
+	add(cursorSpr);
+}
+
+function createMinimap() {
+	var mx = W - MINIMAP_W;
+	var my = HEADER_H + TAB_BAR_H;
+	var mh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+
+	minimapBg = new FlxSprite(mx, my).makeGraphic(MINIMAP_W, mh, C_PANEL2);
+	add(minimapBg);
+	minimapBorder = new FlxSprite(mx, my).makeGraphic(1, mh, C_BORDER);
+	minimapBorder.alpha = 0.4;
+	add(minimapBorder);
+
+	minimapTitle = new FlxText(mx + 6, my + 4, MINIMAP_W - 12, "MAP", 9);
+	minimapTitle.color = C_DIMMER;
+	add(minimapTitle);
+
+	minimapCode = new FlxText(mx + 4, my + 18, MINIMAP_W - 8, "", 3);
+	minimapCode.color = FlxColor.fromRGB(70, 70, 90);
+	add(minimapCode);
+
+	minimapViewport = new FlxSprite(mx + 2, my + 18).makeGraphic(MINIMAP_W - 4, 40, C_ACCENT);
+	minimapViewport.alpha = 0.1;
+	add(minimapViewport);
+}
+
+function createFindBar() {
+	var ex = VISUAL_W;
+	var ey = HEADER_H + TAB_BAR_H;
+	var ew = W - VISUAL_W - MINIMAP_W;
+
+	findBarBg = new FlxSprite(ex, ey).makeGraphic(ew, FIND_BAR_H, FlxColor.fromRGB(35, 35, 50));
+	findBarBg.visible = false;
+	add(findBarBg);
+
+	findBarBorder = new FlxSprite(ex, ey + FIND_BAR_H - 1).makeGraphic(ew, 1, C_ACCENT);
+	findBarBorder.alpha = 0.5;
+	findBarBorder.visible = false;
+	add(findBarBorder);
+
+	findLabel = new FlxText(ex + 10, ey + 6, 50, "Find:", 12);
+	findLabel.color = C_DIM;
+	findLabel.visible = false;
+	add(findLabel);
+
+	findInputText = new FlxText(ex + 60, ey + 6, ew - 250, "", 12);
+	findInputText.color = C_TEXT;
+	findInputText.visible = false;
+	add(findInputText);
+
+	findResultText = new FlxText(ex + ew - 180, ey + 6, 170, "", 11);
+	findResultText.color = C_DIM;
+	findResultText.alignment = RIGHT;
+	findResultText.visible = false;
+	add(findResultText);
+
+	findOptionsText = new FlxText(ex + 10, ey + 32, ew - 20, "ENTER:Confirm  ESC:Close  Ctrl+R:Regex  Ctrl+Shift+C:Case  TAB:Replace mode", 9);
+	findOptionsText.color = C_DIMMER;
+	findOptionsText.visible = false;
+	add(findOptionsText);
+}
+
+function createFooter() {
+	var fy = H - FOOTER_H;
+	footerBg = new FlxSprite(0, fy).makeGraphic(W, FOOTER_H, C_FOOTER);
+	add(footerBg);
+	var footerLine = new FlxSprite(0, fy).makeGraphic(W, 1, C_BORDER);
+	footerLine.alpha = 0.4;
+	add(footerLine);
+
+	footerLeft = new FlxText(12, fy + 5, 400, "", 10);
+	footerLeft.color = C_DIM;
+	add(footerLeft);
+
+	footerCenter = new FlxText(W / 2 - 200, fy + 5, 400, "", 10);
+	footerCenter.color = C_DIMMER;
+	footerCenter.alignment = CENTER;
+	add(footerCenter);
+
+	footerRight = new FlxText(W - 412, fy + 5, 400, "", 10);
+	footerRight.color = C_DIM;
+	footerRight.alignment = RIGHT;
+	add(footerRight);
+}
+
+function createOverlays() {
+	shortcutsOverlay = new FlxSprite(W / 2 - 300, H / 2 - 240).makeGraphic(600, 480, C_PANEL);
+	shortcutsOverlay.alpha = 0.97;
+	shortcutsOverlay.visible = false;
+	add(shortcutsOverlay);
+
+	shortcutsText = new FlxText(W / 2 - 280, H / 2 - 220, 560, "", 11);
+	shortcutsText.color = C_TEXT;
+	shortcutsText.visible = false;
+	add(shortcutsText);
+
+	var sc = "KEYBOARD SHORTCUTS\n\n";
+	sc += "File Operations:\n";
+	sc += "  Ctrl+S          Save file\n";
+	sc += "  Ctrl+N          New file from template\n";
+	sc += "  Ctrl+W          Close current tab\n";
+	sc += "  Ctrl+TAB        Next tab\n";
+	sc += "  Ctrl+Shift+TAB  Previous tab\n\n";
+	sc += "Editing:\n";
+	sc += "  Ctrl+Z          Undo\n";
+	sc += "  Ctrl+Shift+Z    Redo\n";
+	sc += "  Ctrl+Y          Redo\n";
+	sc += "  Ctrl+X          Cut selection\n";
+	sc += "  Ctrl+C          Copy selection\n";
+	sc += "  Ctrl+V          Paste\n";
+	sc += "  Ctrl+A          Select all\n";
+	sc += "  Ctrl+D          Duplicate current line\n";
+	sc += "  Ctrl+/          Toggle line comment\n";
+	sc += "  TAB             Indent selection\n";
+	sc += "  Shift+TAB       Unindent selection\n\n";
+	sc += "Navigation:\n";
+	sc += "  Ctrl+F          Find & Replace\n";
+	sc += "  Ctrl+G          Go to line\n";
+	sc += "  Ctrl+P          Go to function\n";
+	sc += "  F2              Next bookmark\n";
+	sc += "  Ctrl+F2         Toggle bookmark\n";
+	sc += "  Alt+UP/DOWN     Move line up/down\n\n";
+	sc += "View:\n";
+	sc += "  F1              Toggle shortcuts\n";
+	sc += "  F4              Toggle settings\n";
+	sc += "  F5              Validate syntax\n";
+	sc += "  F6              Format code\n";
+	sc += "  Ctrl++/-        Zoom in/out\n";
+	sc += "  Ctrl+0          Reset zoom\n";
+	sc += "  ESC             Exit (auto-saves)";
+	shortcutsText.text = sc;
+
+	settingsOverlay = new FlxSprite(W / 2 - 220, H / 2 - 200).makeGraphic(440, 400, C_PANEL);
+	settingsOverlay.alpha = 0.97;
+	settingsOverlay.visible = false;
+	add(settingsOverlay);
+
+	settingsText = new FlxText(W / 2 - 200, H / 2 - 180, 400, "", 11);
+	settingsText.color = C_TEXT;
+	settingsText.visible = false;
+	add(settingsText);
+
+	notifBg = new FlxSprite(W / 2 - 200, 50).makeGraphic(400, 30, C_PANEL3);
+	notifBg.alpha = 0.95;
+	notifBg.visible = false;
+	add(notifBg);
+
+	notifLabel = new FlxText(W / 2 - 190, 55, 380, "", 12);
+	notifLabel.color = C_TEXT;
+	notifLabel.alignment = CENTER;
+	notifLabel.visible = false;
+	add(notifLabel);
 }
 
 // =============================================================================
@@ -176,99 +529,681 @@ function loadFile(path:String) {
 		var c:String = sys.io.File.getContent(path);
 		if (c == null) c = "";
 		filePath = path;
+		fileName = haxe.io.Path.withoutDirectory(path);
 		content = c;
 		originalContent = c;
 		lines = content.split("\n");
+		totalLines = lines.length;
 		isDirty = false;
 		cursorLine = 0;
+		cursorCol = 0;
 		scrollY = 0;
-		createTab(haxe.io.Path.withoutDirectory(path), content);
+		scrollX = 0;
+		bookmarks = [];
+		foldedLines = [];
+		createTab(fileName, content);
+		headerFilePath.text = filePath;
 	} catch(e:Dynamic) {
-		trace("HXEditor: Error loading " + path + ": " + e);
-		content = "// Error loading file: " + path;
+		content = "// Error loading: " + path + "\n// " + Std.string(e);
 		lines = content.split("\n");
+		totalLines = lines.length;
+		fileName = "Error";
 	}
 }
 
 function saveFile() {
-	if (filePath == null || filePath.length == 0) return;
+	if (filePath == null || filePath.length == 0) {
+		showNotification("No file path set - cannot save", 3);
+		return;
+	}
 	try {
 		sys.io.File.saveContent(filePath, content);
 		originalContent = content;
 		isDirty = false;
-		refreshStatus();
+		headerModified.text = "";
+		showNotification("Saved: " + fileName, 2);
 		refreshTabs();
-		trace("HXEditor: Saved " + filePath);
+		refreshStatus();
 	} catch(e:Dynamic) {
-		trace("HXEditor: Save error: " + e);
+		showNotification("Save error: " + Std.string(e), 4);
 	}
+}
+
+function newFileFromTemplate() {
+	filePath = "";
+	fileName = "NewFile.hx";
+	content = getDefaultTemplate();
+	originalContent = content;
+	lines = content.split("\n");
+	totalLines = lines.length;
+	isDirty = false;
+	cursorLine = 0;
+	cursorCol = 0;
+	scrollY = 0;
+	parseContent();
+	createTab(fileName, content);
+	headerFilePath.text = "Untitled";
+	refreshAll();
+	showNotification("New file created from template", 2);
+}
+
+function getDefaultTemplate():String {
+	return "package;\n\nimport flixel.FlxSprite;\nimport flixel.FlxG;\nimport flixel.text.FlxText;\nimport flixel.util.FlxColor;\n\nclass NewClass {\n\n\tpublic function new() {\n\t\t\n\t}\n\n\tpublic function update(elapsed:Float):Void {\n\t\t\n\t}\n\n\tpublic function destroy():Void {\n\t\t\n\t}\n}\n";
 }
 
 // =============================================================================
 //  TABS
 // =============================================================================
 function createTab(name:String, cont:String):Dynamic {
-	var tab = { name: name, content: cont, path: filePath, dirty: false, scrollY: 0, curLine: 0 };
+	for (i in 0...tabs.length) {
+		if (tabs[i].name == name) {
+			activeTabIndex = i;
+			refreshTabs();
+			return tabs[i];
+		}
+	}
+	var tab = { name: name, content: cont, path: filePath, dirty: false, scrollY: 0, curLine: 0, curCol: 0 };
 	tabs.push(tab);
-	activeTab = tab;
+	activeTabIndex = tabs.length - 1;
 	refreshTabs();
 	return tab;
 }
 
+function switchTab(index:Int) {
+	if (index < 0 || index >= tabs.length) return;
+	if (activeTabIndex >= 0 && activeTabIndex < tabs.length) {
+		tabs[activeTabIndex].content = content;
+		tabs[activeTabIndex].scrollY = scrollY;
+		tabs[activeTabIndex].curLine = cursorLine;
+		tabs[activeTabIndex].curCol = cursorCol;
+		tabs[activeTabIndex].dirty = isDirty;
+	}
+	activeTabIndex = index;
+	var tab = tabs[index];
+	filePath = tab.path;
+	fileName = tab.name;
+	content = tab.content;
+	lines = content.split("\n");
+	totalLines = lines.length;
+	scrollY = tab.scrollY;
+	cursorLine = tab.curLine;
+	cursorCol = tab.curCol;
+	isDirty = tab.dirty;
+	headerFilePath.text = filePath.length > 0 ? filePath : "Untitled";
+	parseContent();
+	refreshAll();
+}
+
+function closeTab(index:Int) {
+	if (tabs.length <= 1) {
+		newFileFromTemplate();
+		return;
+	}
+	tabs.splice(index, 1);
+	if (activeTabIndex >= tabs.length) activeTabIndex = tabs.length - 1;
+	switchTab(activeTabIndex);
+}
+
 function refreshTabs() {
-	tabItemsGroup.clear();
+	tabGroup.clear();
 	var xOff:Float = 4;
-	for (tab in tabs) {
-		var isActive = tab == activeTab;
-		var w = 130;
-		var spr = new FlxSprite(xOff, TOP_H + 2).makeGraphic(w, TAB_H - 4, isActive ? FlxColor.fromRGB(40, 40, 58) : FlxColor.fromRGB(26, 26, 38));
-		tabItemsGroup.add(spr);
+	for (i in 0...tabs.length) {
+		var tab = tabs[i];
+		var isActive = i == activeTabIndex;
+		var tw = 130;
+		var bg = new FlxSprite(xOff, HEADER_H + 2).makeGraphic(tw, TAB_BAR_H - 4, isActive ? FlxColor.fromRGB(40, 40, 58) : FlxColor.fromRGB(26, 26, 38));
+		tabGroup.add(bg);
+
 		var displayName = tab.name;
-		if (tab.dirty) displayName = "* " + displayName;
-		var lbl = new FlxText(xOff + 6, TOP_H + 6, w - 12, displayName, 10);
-		lbl.color = isActive ? FlxColor.WHITE : COL_DIM;
-		tabItemsGroup.add(lbl);
-		xOff += w + 2;
+		if (tab.dirty || (isActive && isDirty)) displayName = "* " + displayName;
+		var lbl = new FlxText(xOff + 6, HEADER_H + 6, tw - 24, displayName, 10);
+		lbl.color = isActive ? FlxColor.WHITE : C_DIM;
+		tabGroup.add(lbl);
+
+		if (tabs.length > 1) {
+			var closeBtn = new FlxText(xOff + tw - 16, HEADER_H + 5, 14, "x", 10);
+			closeBtn.color = FlxColor.fromRGB(180, 80, 80);
+			tabGroup.add(closeBtn);
+		}
+
+		if (isActive) {
+			var activeLine = new FlxSprite(xOff, HEADER_H + TAB_BAR_H - 2).makeGraphic(tw, 2, C_ACCENT);
+			tabGroup.add(activeLine);
+		}
+
+		xOff += tw + 2;
 	}
 }
 
 // =============================================================================
-//  PARSING - uses new EReg() for regex (HScript requirement)
+//  TEXT EDITING
+// =============================================================================
+function insertText(text:String) {
+	pushUndo();
+	if (hasSelection) deleteSelection();
+
+	var before = lines[cursorLine].substr(0, cursorCol);
+	var after = lines[cursorLine].substr(cursorCol);
+
+	if (text.indexOf("\n") >= 0) {
+		var parts = text.split("\n");
+		lines[cursorLine] = before + parts[0];
+		for (i in 1...parts.length) {
+			var indent = "";
+			if (autoIndent && i == parts.length - 1) {
+				indent = getLineIndent(cursorLine);
+			}
+			lines.insert(cursorLine + i, indent + parts[i]);
+		}
+		cursorLine += parts.length - 1;
+		cursorCol = (autoIndent ? getLineIndent(cursorLine).length : 0) + parts[parts.length - 1].length;
+	} else {
+		lines[cursorLine] = before + text + after;
+		cursorCol += text.length;
+	}
+
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+	refreshTabs();
+}
+
+function deleteCharBackward() {
+	if (hasSelection) { deleteSelection(); return; }
+	if (cursorCol > 0) {
+		pushUndo();
+		var before = lines[cursorLine].substr(0, cursorCol - 1);
+		var after = lines[cursorLine].substr(cursorCol);
+		lines[cursorLine] = before + after;
+		cursorCol--;
+	} else if (cursorLine > 0) {
+		pushUndo();
+		var prevLine = lines[cursorLine - 1];
+		cursorCol = prevLine.length;
+		lines[cursorLine - 1] = prevLine + lines[cursorLine];
+		lines.splice(cursorLine, 1);
+		cursorLine--;
+	}
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+}
+
+function deleteCharForward() {
+	if (hasSelection) { deleteSelection(); return; }
+	if (cursorCol < lines[cursorLine].length) {
+		pushUndo();
+		var before = lines[cursorLine].substr(0, cursorCol);
+		var after = lines[cursorLine].substr(cursorCol + 1);
+		lines[cursorLine] = before + after;
+	} else if (cursorLine < lines.length - 1) {
+		pushUndo();
+		lines[cursorLine] = lines[cursorLine] + lines[cursorLine + 1];
+		lines.splice(cursorLine + 1, 1);
+	}
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+}
+
+function insertNewline() {
+	pushUndo();
+	if (hasSelection) deleteSelection();
+
+	var currentLine = lines[cursorLine];
+	var before = currentLine.substr(0, cursorCol);
+	var after = currentLine.substr(cursorCol);
+
+	var indent = "";
+	if (autoIndent) {
+		indent = getLineIndent(cursorLine);
+		var trimmed = StringTools.trim(before);
+		if (trimmed.endsWith("{") || trimmed.endsWith("(") || trimmed.endsWith(":")) {
+			indent += "\t";
+		}
+	}
+
+	lines[cursorLine] = before;
+	lines.insert(cursorLine + 1, indent + after);
+	cursorLine++;
+	cursorCol = indent.length;
+
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+	refreshTabs();
+}
+
+function getLineIndent(lineIdx:Int):String {
+	if (lineIdx < 0 || lineIdx >= lines.length) return "";
+	var line = lines[lineIdx];
+	var indent = "";
+	for (i in 0...line.length) {
+		var ch = line.charAt(i);
+		if (ch == "\t" || ch == " ") indent += ch;
+		else break;
+	}
+	return indent;
+}
+
+function deleteSelection() {
+	if (!hasSelection) return;
+	pushUndo();
+
+	var startL = selectionStartLine;
+	var startC = selectionStartCol;
+	var endL = selectionEndLine;
+	var endC = selectionEndCol;
+
+	if (startL > endL || (startL == endL && startC > endC)) {
+		var tmpL = startL; var tmpC = startC;
+		startL = endL; startC = endC;
+		endL = tmpL; endC = tmpC;
+	}
+
+	if (startL == endL) {
+		lines[startL] = lines[startL].substr(0, startC) + lines[startL].substr(endC);
+	} else {
+		var firstPart = lines[startL].substr(0, startC);
+		var lastPart = lines[endL].substr(endC);
+		lines[startL] = firstPart + lastPart;
+		var removeCount = endL - startL;
+		for (i in 0...removeCount) {
+			lines.splice(startL + 1, 1);
+		}
+	}
+
+	cursorLine = startL;
+	cursorCol = startC;
+	hasSelection = false;
+	selectionStartLine = -1;
+	selectionStartCol = -1;
+	selectionEndLine = -1;
+	selectionEndCol = -1;
+
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+}
+
+function getSelectedText():String {
+	if (!hasSelection) return "";
+	var startL = selectionStartLine;
+	var startC = selectionStartCol;
+	var endL = selectionEndLine;
+	var endC = selectionEndCol;
+	if (startL > endL || (startL == endL && startC > endC)) {
+		var tmpL = startL; var tmpC = startC;
+		startL = endL; startC = endC;
+		endL = tmpL; endC = tmpC;
+	}
+	if (startL == endL) {
+		return lines[startL].substr(startC, endC - startC);
+	}
+	var result = lines[startL].substr(startC) + "\n";
+	for (i in startL + 1...endL) {
+		result += lines[i] + "\n";
+	}
+	result += lines[endL].substr(0, endC);
+	return result;
+}
+
+function selectAll() {
+	selectionStartLine = 0;
+	selectionStartCol = 0;
+	selectionEndLine = lines.length - 1;
+	selectionEndCol = lines[lines.length - 1].length;
+	hasSelection = true;
+	refreshCode();
+}
+
+function duplicateLine() {
+	pushUndo();
+	var line = lines[cursorLine];
+	lines.insert(cursorLine + 1, line);
+	cursorLine++;
+	content = lines.join("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+}
+
+function toggleLineComment() {
+	pushUndo();
+	var startL = hasSelection ? Math.min(selectionStartLine, selectionEndLine) : cursorLine;
+	var endL = hasSelection ? Math.max(selectionStartLine, selectionEndLine) : cursorLine;
+
+	var allCommented = true;
+	for (i in startL...endL + 1) {
+		if (StringTools.trim(lines[i]).length > 0 && !StringTools.startsWith(StringTools.trim(lines[i]), "//")) {
+			allCommented = false;
+			break;
+		}
+	}
+
+	for (i in startL...endL + 1) {
+		if (allCommented) {
+			var idx = lines[i].indexOf("//");
+			if (idx >= 0) {
+				if (idx + 2 < lines[i].length && lines[i].charAt(idx + 2) == " ") {
+					lines[i] = lines[i].substr(0, idx) + lines[i].substr(idx + 3);
+				} else {
+					lines[i] = lines[i].substr(0, idx) + lines[i].substr(idx + 2);
+				}
+			}
+		} else {
+			var indent = getLineIndent(i);
+			lines[i] = indent + "// " + StringTools.trim(lines[i]);
+		}
+	}
+
+	content = lines.join("\n");
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshVisual();
+	refreshStatus();
+}
+
+function moveLineUp() {
+	if (cursorLine <= 0) return;
+	pushUndo();
+	var temp = lines[cursorLine];
+	lines[cursorLine] = lines[cursorLine - 1];
+	lines[cursorLine - 1] = temp;
+	cursorLine--;
+	content = lines.join("\n");
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshVisual();
+	refreshStatus();
+}
+
+function moveLineDown() {
+	if (cursorLine >= lines.length - 1) return;
+	pushUndo();
+	var temp = lines[cursorLine];
+	lines[cursorLine] = lines[cursorLine + 1];
+	lines[cursorLine + 1] = temp;
+	cursorLine++;
+	content = lines.join("\n");
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshVisual();
+	refreshStatus();
+}
+
+function indentSelection() {
+	pushUndo();
+	var startL = hasSelection ? Math.min(selectionStartLine, selectionEndLine) : cursorLine;
+	var endL = hasSelection ? Math.max(selectionStartLine, selectionEndLine) : cursorLine;
+	for (i in startL...endL + 1) {
+		lines[i] = "\t" + lines[i];
+	}
+	content = lines.join("\n");
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshStatus();
+}
+
+function unindentSelection() {
+	pushUndo();
+	var startL = hasSelection ? Math.min(selectionStartLine, selectionEndLine) : cursorLine;
+	var endL = hasSelection ? Math.max(selectionStartLine, selectionEndLine) : cursorLine;
+	for (i in startL...endL + 1) {
+		if (StringTools.startsWith(lines[i], "\t")) {
+			lines[i] = lines[i].substr(1);
+		} else if (StringTools.startsWith(lines[i], "    ")) {
+			lines[i] = lines[i].substr(4);
+		}
+	}
+	content = lines.join("\n");
+	isDirty = true;
+	headerModified.text = "*";
+	refreshCode();
+	refreshStatus();
+}
+
+// =============================================================================
+//  UNDO/REDO
+// =============================================================================
+function pushUndo() {
+	undoStack.push({ content: content, line: cursorLine, col: cursorCol });
+	if (undoStack.length > MAX_UNDO) undoStack.shift();
+	redoStack = [];
+}
+
+function undo() {
+	if (undoStack.length == 0) { showNotification("Nothing to undo", 1); return; }
+	var action = undoStack.pop();
+	redoStack.push({ content: content, line: cursorLine, col: cursorCol });
+	content = action.content;
+	lines = content.split("\n");
+	totalLines = lines.length;
+	cursorLine = action.line;
+	cursorCol = action.col;
+	isDirty = content != originalContent;
+	headerModified.text = isDirty ? "*" : "";
+	parseContent();
+	refreshAll();
+	showNotification("Undo (" + undoStack.length + " remaining)", 1);
+}
+
+function redo() {
+	if (redoStack.length == 0) { showNotification("Nothing to redo", 1); return; }
+	var action = redoStack.pop();
+	undoStack.push({ content: content, line: cursorLine, col: cursorCol });
+	content = action.content;
+	lines = content.split("\n");
+	totalLines = lines.length;
+	cursorLine = action.line;
+	cursorCol = action.col;
+	isDirty = content != originalContent;
+	headerModified.text = isDirty ? "*" : "";
+	parseContent();
+	refreshAll();
+	showNotification("Redo (" + redoStack.length + " remaining)", 1);
+}
+
+// =============================================================================
+//  FIND & REPLACE
+// =============================================================================
+function toggleFindBar() {
+	findBarVisible = !findBarVisible;
+	findBarBg.visible = findBarVisible;
+	findBarBorder.visible = findBarVisible;
+	findLabel.visible = findBarVisible;
+	findInputText.visible = findBarVisible;
+	findResultText.visible = findBarVisible;
+	findOptionsText.visible = findBarVisible;
+	if (findBarVisible) {
+		findMode = true;
+		findQuery = "";
+		findInputText.text = "|";
+		findResultText.text = "";
+	} else {
+		findMode = false;
+	}
+}
+
+function performFind() {
+	findResults = [];
+	currentFindIdx = -1;
+	if (findQuery.length == 0) { findResultText.text = ""; return; }
+
+	var q = findCaseSensitive ? findQuery : findQuery.toLowerCase();
+
+	if (findUseRegex) {
+		try {
+			var flags = findCaseSensitive ? "g" : "gi";
+			var reg = new EReg(findQuery, flags);
+			for (i in 0...lines.length) {
+				var line = lines[i];
+				var pos = 0;
+				while (reg.matchSub(line, pos)) {
+					var mp = reg.matchedPos();
+					findResults.push({ line: i, col: mp.pos, len: mp.len });
+					pos = mp.pos + mp.len;
+					if (mp.len == 0) break;
+				}
+			}
+		} catch(e:Dynamic) {
+			findResultText.text = "Invalid regex";
+			findResultText.color = C_ERROR;
+			return;
+		}
+	} else {
+		for (i in 0...lines.length) {
+			var line = findCaseSensitive ? lines[i] : lines[i].toLowerCase();
+			var pos = 0;
+			while (true) {
+				var idx = line.indexOf(q, pos);
+				if (idx < 0) break;
+				findResults.push({ line: i, col: idx, len: findQuery.length });
+				pos = idx + findQuery.length;
+			}
+		}
+	}
+
+	findResultText.text = findResults.length + " match(es)";
+	findResultText.color = findResults.length > 0 ? C_SUCCESS : C_WARNING;
+
+	if (findResults.length > 0) {
+		currentFindIdx = 0;
+		cursorLine = findResults[0].line;
+		cursorCol = findResults[0].col;
+		ensureLineVisible(cursorLine);
+		refreshCode();
+		refreshStatus();
+	}
+}
+
+function findNext() {
+	if (findResults.length == 0) return;
+	currentFindIdx = (currentFindIdx + 1) % findResults.length;
+	var r = findResults[currentFindIdx];
+	cursorLine = r.line;
+	cursorCol = r.col;
+	ensureLineVisible(cursorLine);
+	findResultText.text = (currentFindIdx + 1) + "/" + findResults.length + " matches";
+	refreshCode();
+	refreshStatus();
+}
+
+function findPrev() {
+	if (findResults.length == 0) return;
+	currentFindIdx = (currentFindIdx - 1 + findResults.length) % findResults.length;
+	var r = findResults[currentFindIdx];
+	cursorLine = r.line;
+	cursorCol = r.col;
+	ensureLineVisible(cursorLine);
+	findResultText.text = (currentFindIdx + 1) + "/" + findResults.length + " matches";
+	refreshCode();
+	refreshStatus();
+}
+
+function performReplace() {
+	if (findResults.length == 0 || findQuery.length == 0) return;
+	pushUndo();
+
+	if (findUseRegex) {
+		try {
+			var flags = findCaseSensitive ? "g" : "gi";
+			var reg = new EReg(findQuery, flags);
+			content = reg.replace(content, replaceQuery);
+		} catch(e:Dynamic) { return; }
+	} else {
+		content = content.split(findQuery).join(replaceQuery);
+	}
+
+	lines = content.split("\n");
+	totalLines = lines.length;
+	isDirty = true;
+	headerModified.text = "*";
+	parseContent();
+	performFind();
+	refreshAll();
+	showNotification("Replaced all occurrences", 2);
+}
+
+// =============================================================================
+//  PARSING
 // =============================================================================
 function parseContent() {
-	parsedPkg = ""; parsedClass = ""; parsedExtends = ""; parsedFuncs = []; parsedVars = []; parsedImports = 0;
+	parsedPkg = ""; parsedClass = ""; parsedExtends = ""; parsedImplements = "";
+	parsedFuncs = []; parsedVars = []; parsedImports = [];
 
 	var pkgReg = new EReg("^package\\s+([\\w.]+)\\s*;", "m");
 	if (pkgReg.match(content)) parsedPkg = pkgReg.matched(1);
 
-	var clsReg = new EReg("class\\s+(\\w+)(?:\\s+extends\\s+([\\w.]+))?", "");
+	var clsReg = new EReg("class\\s+(\\w+)(?:\\s+extends\\s+([\\w.]+))?(?:\\s+implements\\s+([\\w., ]+))?", "");
 	if (clsReg.match(content)) {
 		parsedClass = clsReg.matched(1);
 		if (clsReg.matched(2) != null) parsedExtends = clsReg.matched(2);
+		if (clsReg.matched(3) != null) parsedImplements = clsReg.matched(3);
 	}
 
-	var impReg = new EReg("^import\\s+", "gm");
+	var impReg = new EReg("^import\\s+([\\w.*]+)\\s*;", "gm");
 	var pos = 0;
 	while (impReg.matchSub(content, pos)) {
-		parsedImports++;
+		parsedImports.push({ name: impReg.matched(1), line: content.substr(0, impReg.matchedPos().pos).split("\n").length });
 		pos = impReg.matchedPos().pos + impReg.matchedPos().len;
 	}
 
-	var funcReg = new EReg("((?:public|private|static|inline|override)\\s+)*function\\s+(\\w+)", "g");
+	var funcReg = new EReg("((?:public|private|static|inline|override|dynamic)\\s+)*function\\s+(\\w+)\\s*\\(([^)]*)\\)", "g");
 	pos = 0;
 	while (funcReg.matchSub(content, pos)) {
 		var mods = funcReg.matched(1) != null ? funcReg.matched(1) : "";
 		parsedFuncs.push({
 			name: funcReg.matched(2),
+			params: funcReg.matched(3) != null ? funcReg.matched(3) : "",
 			pub: mods.indexOf("public") >= 0,
 			stat: mods.indexOf("static") >= 0,
 			over: mods.indexOf("override") >= 0,
+			inl: mods.indexOf("inline") >= 0,
 			line: content.substr(0, funcReg.matchedPos().pos).split("\n").length
 		});
 		pos = funcReg.matchedPos().pos + funcReg.matchedPos().len;
 	}
 
-	var varReg = new EReg("((?:public|private|static)\\s+)*var\\s+(\\w+)\\s*(?::\\s*(\\w+))?", "g");
+	var varReg = new EReg("((?:public|private|static|final)\\s+)*var\\s+(\\w+)\\s*(?::\\s*([\\w<>, ]+))?", "g");
 	pos = 0;
 	while (varReg.matchSub(content, pos)) {
 		var mods = varReg.matched(1) != null ? varReg.matched(1) : "";
@@ -276,160 +1211,276 @@ function parseContent() {
 			name: varReg.matched(2),
 			type: varReg.matched(3),
 			pub: mods.indexOf("public") >= 0,
-			stat: mods.indexOf("static") >= 0
+			stat: mods.indexOf("static") >= 0,
+			fin: mods.indexOf("final") >= 0,
+			line: content.substr(0, varReg.matchedPos().pos).split("\n").length
 		});
 		pos = varReg.matchedPos().pos + varReg.matchedPos().len;
 	}
 }
 
 // =============================================================================
-//  REFRESH
+//  REFRESH FUNCTIONS
 // =============================================================================
-function refreshAll() { refreshCode(); refreshVisual(); refreshMinimap(); refreshStatus(); refreshTabs(); }
+function refreshAll() {
+	refreshCode();
+	refreshVisual();
+	refreshMinimap();
+	refreshStatus();
+	refreshTabs();
+}
 
 function refreshCode() {
-	var ey = TOP_H + TAB_H;
-	var ew = FlxG.width - VISUAL_W - MINIMAP_W;
-	var eh = FlxG.height - TOP_H - TAB_H - STATUS_H;
-	var visLines = Std.int(eh / lineH);
-	var startLine = Std.int(scrollY / lineH);
-	if (startLine < 0) startLine = 0;
+	var ex = VISUAL_W;
+	var ey = HEADER_H + TAB_BAR_H;
+	var ew = W - VISUAL_W - MINIMAP_W;
+	var eh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+	if (findBarVisible) { ey += FIND_BAR_H; eh -= FIND_BAR_H; }
 
+	var visLines = Std.int(eh / LINE_H);
+	var startLine = Std.int(scrollY / LINE_H);
+	if (startLine < 0) startLine = 0;
+	var endLine = Math.min(startLine + visLines, lines.length);
+
+	// Line numbers
 	var lnBuf = new StringBuf();
-	for (i in startLine...Math.min(startLine + visLines, lines.length)) {
+	for (i in startLine...endLine) {
 		lnBuf.add("" + (i + 1) + "\n");
 	}
 	lineNumText.text = lnBuf.toString();
 
-	var displayLines = lines.slice(startLine, startLine + visLines);
-	codeText.text = displayLines.join("\n");
+	// Code display
+	var codeBuf = new StringBuf();
+	for (i in startLine...endLine) {
+		codeBuf.add(lines[i] + "\n");
+	}
+	codeText.text = codeBuf.toString();
 
-	if (cursorLine >= startLine && cursorLine < startLine + visLines) {
-		highlightSpr.y = ey + (cursorLine - startLine) * lineH + 2;
+	// Current line highlight
+	if (highlightCurrentLine && cursorLine >= startLine && cursorLine < endLine) {
+		highlightSpr.y = ey + (cursorLine - startLine) * LINE_H + 2;
 		highlightSpr.visible = true;
 	} else {
 		highlightSpr.visible = false;
 	}
+
+	// Cursor position
+	if (cursorLine >= startLine && cursorLine < endLine) {
+		var cx = ex + LINE_NUM_W + 4 + (cursorCol * (FONT_SIZE * 0.6));
+		var cy = ey + (cursorLine - startLine) * LINE_H + 4;
+		cursorSpr.x = cx;
+		cursorSpr.y = cy;
+		cursorSpr.visible = true;
+	} else {
+		cursorSpr.visible = false;
+	}
+
+	// Line number highlight for current line
+	lineNumText.color = C_LINE_NUM;
+
+	// Bracket matching
+	checkBracketMatch();
+}
+
+function checkBracketMatch() {
+	bracketMatchSpr.visible = false;
+	if (cursorLine < 0 || cursorLine >= lines.length) return;
+	var line = lines[cursorLine];
+	if (cursorCol >= line.length) return;
+
+	var ch = line.charAt(cursorCol);
+	var matchChar = "";
+
+	if (BRACKET_PAIRS.exists(ch)) {
+		matchChar = BRACKET_PAIRS.get(ch);
+		var depth = 0;
+		for (i in cursorLine...lines.length) {
+			var l = lines[i];
+			var startJ = (i == cursorLine) ? cursorCol + 1 : 0;
+			for (j in startJ...l.length) {
+				if (l.charAt(j) == ch) depth++;
+				if (l.charAt(j) == matchChar) {
+					if (depth == 0) {
+						showBracketMatch(i, j);
+						return;
+					}
+					depth--;
+				}
+			}
+		}
+	} else if (CLOSE_BRACKETS.exists(ch)) {
+		matchChar = CLOSE_BRACKETS.get(ch);
+		var depth = 0;
+		var i = cursorLine;
+		while (i >= 0) {
+			var l = lines[i];
+			var startJ = (i == cursorLine) ? cursorCol - 1 : l.length - 1;
+			var j = startJ;
+			while (j >= 0) {
+				if (l.charAt(j) == ch) depth++;
+				if (l.charAt(j) == matchChar) {
+					if (depth == 0) {
+						showBracketMatch(i, j);
+						return;
+					}
+					depth--;
+				}
+				j--;
+			}
+			i--;
+		}
+	}
+}
+
+function showBracketMatch(line:Int, col:Int) {
+	var ex = VISUAL_W;
+	var ey = HEADER_H + TAB_BAR_H;
+	if (findBarVisible) ey += FIND_BAR_H;
+	var startLine = Std.int(scrollY / LINE_H);
+	if (line >= startLine && line < startLine + Std.int((H - HEADER_H - TAB_BAR_H - FOOTER_H) / LINE_H)) {
+		bracketMatchSpr.x = ex + LINE_NUM_W + 4 + (col * (FONT_SIZE * 0.6));
+		bracketMatchSpr.y = ey + (line - startLine) * LINE_H + 4;
+		bracketMatchSpr.visible = true;
+	}
 }
 
 function refreshVisual() {
-	visualItemsGroup.clear();
-	var y:Float = TOP_H + TAB_H + 24;
+	visualGroup.clear();
+	var y:Float = HEADER_H + TAB_BAR_H + 28;
+	var maxY = H - FOOTER_H - 10;
 
-	if (parsedPkg.length > 0) y = addVisItem("Package: " + parsedPkg, 0xFFAAAAFF, 8, y, 18);
-	if (parsedImports > 0) y = addVisItem("Imports (" + parsedImports + ")", 0xFF88AA88, 8, y, 18);
+	if (parsedPkg.length > 0) {
+		y = addVisualItem("Package: " + parsedPkg, FlxColor.fromRGB(170, 170, 255), 10, y, 18);
+	}
+
+	if (parsedImports.length > 0) {
+		var impExpanded = visualExpanded.exists("imports") ? visualExpanded.get("imports") : true;
+		var impArrow = impExpanded ? "v " : "> ";
+		y = addVisualItem(impArrow + "Imports (" + parsedImports.length + ")", FlxColor.fromRGB(136, 170, 136), 10, y, 18);
+		if (impExpanded) {
+			var showImp = Math.min(parsedImports.length, 12);
+			for (i in 0...showImp) {
+				var imp = parsedImports[i];
+				var shortName = imp.name;
+				if (shortName.length > 30) shortName = "..." + shortName.substr(shortName.length - 27);
+				y = addVisualItem("  " + shortName, FlxColor.fromRGB(120, 150, 120), 18, y, 14);
+			}
+			if (parsedImports.length > showImp) {
+				y = addVisualItem("  ... +" + (parsedImports.length - showImp) + " more", C_DIM, 18, y, 14);
+			}
+		}
+	}
+
 	if (parsedClass.length > 0) {
 		var clsText = "Class: " + parsedClass;
-		if (parsedExtends.length > 0) clsText += " extends " + parsedExtends;
-		y = addVisItem(clsText, 0xFFFFCC44, 8, y, 22);
+		if (parsedExtends.length > 0) clsText += "\n  extends " + parsedExtends;
+		if (parsedImplements.length > 0) clsText += "\n  implements " + parsedImplements;
+		y = addVisualItem(clsText, FlxColor.fromRGB(255, 204, 68), 10, y, 22 + (parsedExtends.length > 0 ? 14 : 0) + (parsedImplements.length > 0 ? 14 : 0));
 	}
 
 	if (parsedVars.length > 0) {
-		y = addVisItem("Variables (" + parsedVars.length + ")", 0xFF88CCFF, 8, y + 4, 18);
-		var showV = Math.min(parsedVars.length, 18);
-		for (i in 0...showV) {
-			var v = parsedVars[i];
-			var icon = v.pub ? "[+]" : "[-]";
-			if (v.stat) icon = "[S]";
-			var typeStr = v.type != null ? ": " + v.type : "";
-			y = addVisItem(" " + icon + " " + v.name + typeStr, v.pub ? 0xFF88FF88 : 0xFFFF8888, 16, y, 15);
+		var varsExpanded = visualExpanded.exists("vars") ? visualExpanded.get("vars") : true;
+		var varArrow = varsExpanded ? "v " : "> ";
+		y = addVisualItem(varArrow + "Variables (" + parsedVars.length + ")", FlxColor.fromRGB(136, 204, 255), 10, y + 4, 18);
+		if (varsExpanded) {
+			var showV = Math.min(parsedVars.length, 20);
+			for (i in 0...showV) {
+				var v = parsedVars[i];
+				var icon = v.pub ? "[+] " : "[-] ";
+				if (v.stat) icon = "[S] ";
+				if (v.fin) icon = "[F] ";
+				var typeStr = v.type != null ? ": " + v.type : "";
+				y = addVisualItem(icon + v.name + typeStr, v.pub ? FlxColor.fromRGB(136, 255, 136) : FlxColor.fromRGB(255, 136, 136), 18, y, 14);
+			}
+			if (parsedVars.length > showV) {
+				y = addVisualItem("  ... +" + (parsedVars.length - showV) + " more", C_DIM, 18, y, 14);
+			}
 		}
-		if (parsedVars.length > showV) y = addVisItem("  ... +" + (parsedVars.length - showV), COL_DIM, 16, y, 15);
 	}
 
 	if (parsedFuncs.length > 0) {
-		y = addVisItem("Functions (" + parsedFuncs.length + ")", 0xFFFFCC88, 8, y + 6, 18);
-		var showF = Math.min(parsedFuncs.length, 22);
-		for (i in 0...showF) {
-			var f = parsedFuncs[i];
-			var icon = f.pub ? "[+]" : "[-]";
-			if (f.stat) icon = "[S]";
-			if (f.over) icon = "[O]";
-			y = addVisItem(" " + icon + " " + f.name + "()  L" + f.line, f.pub ? 0xFF88CCFF : 0xFFCC8888, 16, y, 15);
+		var funcsExpanded = visualExpanded.exists("funcs") ? visualExpanded.get("funcs") : true;
+		var funcArrow = funcsExpanded ? "v " : "> ";
+		y = addVisualItem(funcArrow + "Functions (" + parsedFuncs.length + ")", FlxColor.fromRGB(255, 204, 136), 10, y + 6, 18);
+		if (funcsExpanded) {
+			var showF = Math.min(parsedFuncs.length, 25);
+			for (i in 0...showF) {
+				var f = parsedFuncs[i];
+				var icon = f.pub ? "[+] " : "[-] ";
+				if (f.stat) icon = "[S] ";
+				if (f.over) icon = "[O] ";
+				if (f.inl) icon = "[I] ";
+				var paramStr = f.params.length > 20 ? f.params.substr(0, 20) + "..." : f.params;
+				y = addVisualItem(icon + f.name + "(" + paramStr + ")", f.pub ? FlxColor.fromRGB(136, 204, 255) : FlxColor.fromRGB(204, 136, 136), 18, y, 14);
+			}
+			if (parsedFuncs.length > showF) {
+				y = addVisualItem("  ... +" + (parsedFuncs.length - showF) + " more", C_DIM, 18, y, 14);
+			}
 		}
-		if (parsedFuncs.length > showF) y = addVisItem("  ... +" + (parsedFuncs.length - showF), COL_DIM, 16, y, 15);
 	}
 
-	y = addVisItem("---", COL_DIM, 8, y + 8, 12);
-	y = addVisItem("Lines: " + lines.length + "  Funcs: " + parsedFuncs.length + "  Vars: " + parsedVars.length, FlxColor.fromRGB(75, 75, 95), 8, y, 14);
+	y = addVisualItem("---", C_DIMMER, 10, y + 8, 10);
+	y = addVisualItem("Lines: " + lines.length + "  Funcs: " + parsedFuncs.length + "  Vars: " + parsedVars.length, FlxColor.fromRGB(75, 75, 95), 10, y, 14);
+	y = addVisualItem("Bookmarks: " + Lambda.count(bookmarks), FlxColor.fromRGB(75, 75, 95), 10, y + 2, 14);
 }
 
-function addVisItem(text:String, color:Int, x:Float, y:Float, h:Float):Float {
+function addVisualItem(text:String, color:Int, x:Float, y:Float, h:Float):Float {
 	var lbl = new FlxText(x, y, VISUAL_W - x - 8, text, 10);
 	lbl.color = color;
-	visualItemsGroup.add(lbl);
+	visualGroup.add(lbl);
 	return y + h;
 }
 
-function refreshMinimap() { minimapCodeText.text = content; }
+function refreshMinimap() {
+	minimapCode.text = content;
+	var eh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+	var totalH = lines.length * 3;
+	if (totalH > 0) {
+		var ratio = eh / totalH;
+		minimapViewport.scale.set(1, Math.max(10, eh * ratio));
+		minimapViewport.updateHitbox();
+		var scrollRatio = scrollY / Math.max(1, totalH - eh);
+		minimapViewport.y = HEADER_H + TAB_BAR_H + 18 + scrollRatio * (eh - minimapViewport.height);
+	}
+}
 
 function refreshStatus() {
-	var parts = [];
-	parts.push(filePath.length > 0 ? filePath : "Untitled");
-	if (isDirty) parts.push("* Modified");
-	parts.push("Ln " + (cursorLine + 1) + ", Col " + (cursorCol + 1));
-	parts.push(lines.length + " lines");
-	if (findResults.length > 0) parts.push("Find: " + findResults.length);
-	parts.push("Undo: " + undoStack.length);
-	statusLabelText.text = parts.join("  |  ");
+	var left = fileName;
+	if (isDirty) left += " *";
+	if (filePath.length > 0) left += "  |  " + filePath;
+	footerLeft.text = left;
+
+	var center = "Ln " + (cursorLine + 1) + ", Col " + (cursorCol + 1);
+	if (hasSelection) center += "  |  Selection: " + getSelectedText().length + " chars";
+	center += "  |  " + lines.length + " lines";
+	if (findResults.length > 0) center += "  |  Find: " + findResults.length;
+	center += "  |  Undo: " + undoStack.length;
+	footerCenter.text = center;
+
+	var right = "Haxe/HScript  |  UTF-8  |  TAB=" + tabSize;
+	footerRight.text = right;
 }
 
-// =============================================================================
-//  FIND
-// =============================================================================
-function performFind() {
-	findResults = [];
-	if (findQuery.length == 0) { findResultText.text = ""; return; }
-	var q = findQuery.toLowerCase();
-	for (i in 0...lines.length) {
-		var line = lines[i].toLowerCase();
-		var pos = 0;
-		while (true) {
-			var idx = line.indexOf(q, pos);
-			if (idx < 0) break;
-			findResults.push({line: i, col: idx});
-			pos = idx + q.length;
-		}
+function ensureLineVisible(line:Int) {
+	var ey = HEADER_H + TAB_BAR_H;
+	var eh = H - HEADER_H - TAB_BAR_H - FOOTER_H;
+	if (findBarVisible) { ey += FIND_BAR_H; eh -= FIND_BAR_H; }
+	var visLines = Std.int(eh / LINE_H);
+	var startLine = Std.int(scrollY / LINE_H);
+
+	if (line < startLine) {
+		scrollY = line * LINE_H;
+	} else if (line >= startLine + visLines - 1) {
+		scrollY = (line - visLines + 2) * LINE_H;
 	}
-	findResultText.text = findResults.length + " match(es) found";
-	if (findResults.length > 0) {
-		cursorLine = findResults[0].line;
-		scrollY = Math.max(0, (cursorLine - 5) * lineH);
-		refreshCode();
-	}
+	if (scrollY < 0) scrollY = 0;
 }
 
-// =============================================================================
-//  UNDO/REDO
-// =============================================================================
-function pushUndo() {
-	undoStack.push({content: content, line: cursorLine});
-	if (undoStack.length > 200) undoStack.shift();
-	redoStack = [];
-}
-
-function undo() {
-	if (undoStack.length == 0) return;
-	var action = undoStack.pop();
-	redoStack.push({content: content, line: cursorLine});
-	content = action.content;
-	lines = content.split("\n");
-	cursorLine = action.line;
-	isDirty = content != originalContent;
-	parseContent();
-	refreshAll();
-}
-
-function redo() {
-	if (redoStack.length == 0) return;
-	var action = redoStack.pop();
-	undoStack.push({content: content, line: cursorLine});
-	content = action.content;
-	lines = content.split("\n");
-	cursorLine = action.line;
-	isDirty = content != originalContent;
-	parseContent();
-	refreshAll();
+function showNotification(msg:String, duration:Float) {
+	notifLabel.text = msg;
+	notifBg.visible = true;
+	notifLabel.visible = true;
+	notifTimer = duration;
 }
 
 // =============================================================================
@@ -439,6 +1490,7 @@ function validateSyntax() {
 	var errors:Array<String> = [];
 	var braces = 0; var brackets = 0; var parens = 0;
 	var inStr = false; var inComment = false; var inLineComment = false;
+	var strChar = "";
 
 	for (lineIdx in 0...lines.length) {
 		var line = lines[lineIdx];
@@ -446,18 +1498,21 @@ function validateSyntax() {
 		for (i in 0...line.length) {
 			var ch = line.charAt(i);
 			var next = i + 1 < line.length ? line.charAt(i + 1) : "";
+			var prev = i > 0 ? line.charAt(i - 1) : "";
+
 			if (inLineComment) continue;
 			if (inComment) {
 				if (ch == "*" && next == "/") { inComment = false; i++; }
 				continue;
 			}
 			if (inStr) {
-				if (ch == '"' && (i == 0 || line.charAt(i - 1) != '\\')) inStr = false;
+				if (ch == strChar && prev != "\\") inStr = false;
 				continue;
 			}
+
 			if (ch == "/" && next == "/") inLineComment = true;
 			else if (ch == "/" && next == "*") { inComment = true; i++; }
-			else if (ch == '"') inStr = true;
+			else if (ch == '"' || ch == "'") { inStr = true; strChar = ch; }
 			else if (ch == "{") braces++;
 			else if (ch == "}") braces--;
 			else if (ch == "[") brackets++;
@@ -466,45 +1521,149 @@ function validateSyntax() {
 			else if (ch == ")") parens--;
 		}
 	}
+
 	if (braces != 0) errors.push("Braces: " + (braces > 0 ? "+" : "") + braces);
 	if (brackets != 0) errors.push("Brackets: " + (brackets > 0 ? "+" : "") + brackets);
 	if (parens != 0) errors.push("Parens: " + (parens > 0 ? "+" : "") + parens);
 
-	findBg.visible = true;
-	findLabelText.visible = true;
+	if (errors.length == 0) {
+		showNotification("No syntax issues found", 3);
+		findResultText.text = "No issues";
+		findResultText.color = C_SUCCESS;
+	} else {
+		showNotification("Issues: " + errors.join(", "), 5);
+		findResultText.text = errors.join(", ");
+		findResultText.color = C_ERROR;
+	}
+	findBarVisible = true;
+	findBarBg.visible = true;
+	findBarBorder.visible = true;
+	findLabel.visible = true;
+	findLabel.text = "Validate:";
+	findInputText.visible = true;
+	findInputText.text = "Syntax check results:";
 	findResultText.visible = true;
-	findResultText.color = errors.length == 0 ? COL_SUCCESS : COL_ERROR;
-	findResultText.text = errors.length == 0 ? "No syntax issues found" : "Issues: " + errors.join(", ");
-	findLabelText.text = "Validation (press ESC to close)";
+	findOptionsText.visible = true;
+	findOptionsText.text = "Press ESC to close";
 }
 
 function formatCode() {
 	pushUndo();
 	var formatted:Array<String> = [];
-	var indent:Int = 0;
-	for (line in lines) {
-		var trimmed = line.trim();
+	var indent = 0;
+	var inBlockComment = false;
+
+	for (i in 0...lines.length) {
+		var line = lines[i];
+		var trimmed = StringTools.trim(line);
+
+		if (trimmed.indexOf("/*") >= 0) inBlockComment = true;
+		if (trimmed.indexOf("*/") >= 0) { inBlockComment = false; formatted.push(StringTools.lpad("", "\t", indent) + trimmed); continue; }
+		if (inBlockComment) { formatted.push(StringTools.lpad("", "\t", indent) + trimmed); continue; }
+
 		if (trimmed.startsWith("}")) indent = Math.max(0, indent - 1);
 		formatted.push(StringTools.lpad("", "\t", indent) + trimmed);
 		if (trimmed.endsWith("{")) indent++;
 	}
+
 	content = formatted.join("\n");
 	lines = content.split("\n");
+	totalLines = lines.length;
 	isDirty = true;
+	headerModified.text = "*";
 	parseContent();
 	refreshAll();
+	showNotification("Code formatted", 2);
+}
+
+function goToLine() {
+	gotoLineMode = true;
+	gotoLineInput = "";
+	findBarVisible = true;
+	findBarBg.visible = true;
+	findBarBorder.visible = true;
+	findLabel.visible = true;
+	findLabel.text = "Go to line:";
+	findInputText.visible = true;
+	findInputText.text = "|";
+	findResultText.visible = true;
+	findResultText.text = "Enter line number (1-" + lines.length + ")";
+	findOptionsText.visible = true;
+	findOptionsText.text = "ENTER: Go  ESC: Cancel";
+}
+
+function goToFunction() {
+	if (parsedFuncs.length == 0) { showNotification("No functions found", 2); return; }
+	var nextFunc = null;
+	for (f in parsedFuncs) {
+		if (f.line > cursorLine + 1) { nextFunc = f; break; }
+	}
+	if (nextFunc == null) nextFunc = parsedFuncs[0];
+	cursorLine = nextFunc.line - 1;
+	cursorCol = 0;
+	ensureLineVisible(cursorLine);
+	refreshCode();
+	refreshStatus();
+	showNotification("Jumped to: " + nextFunc.name + "()", 2);
+}
+
+function toggleBookmark() {
+	if (bookmarks.exists(cursorLine)) {
+		bookmarks.remove(cursorLine);
+		showNotification("Bookmark removed (line " + (cursorLine + 1) + ")", 1.5);
+	} else {
+		bookmarks.set(cursorLine, true);
+		showNotification("Bookmark added (line " + (cursorLine + 1) + ")", 1.5);
+	}
+}
+
+function nextBookmark() {
+	if (Lambda.count(bookmarks) == 0) { showNotification("No bookmarks", 1.5); return; }
+	var bookmarkLines:Array<Int> = [];
+	for (k in bookmarks.keys()) bookmarkLines.push(k);
+	bookmarkLines.sort(Reflect.compare);
+
+	var next = -1;
+	for (bl in bookmarkLines) {
+		if (bl > cursorLine) { next = bl; break; }
+	}
+	if (next == -1) next = bookmarkLines[0];
+	cursorLine = next;
+	cursorCol = 0;
+	ensureLineVisible(cursorLine);
+	refreshCode();
+	refreshStatus();
+	showNotification("Bookmark (line " + (next + 1) + ")", 1.5);
 }
 
 // =============================================================================
 //  UPDATE
 // =============================================================================
 function update(elapsed:Float) {
+	// Notification fade
+	if (notifTimer > 0) {
+		notifTimer -= elapsed;
+		if (notifTimer <= 0) {
+			notifBg.visible = false;
+			notifLabel.visible = false;
+		} else if (notifTimer < 0.5) {
+			notifBg.alpha = notifTimer * 2;
+			notifLabel.alpha = notifTimer * 2;
+		}
+	}
+
+	// Cursor blink
+	cursorSpr.alpha = (Math.sin(FlxG.game.ticks * 0.005) > 0) ? 0.9 : 0.2;
+
+	// ESC
 	if (FlxG.keys.justPressed.ESCAPE) {
-		if (findBg.visible) {
-			findBg.visible = false;
-			findLabelText.visible = false;
-			findResultText.visible = false;
-			findMode = false;
+		if (shortcutsVisible) { shortcutsVisible = false; shortcutsOverlay.visible = false; shortcutsText.visible = false; return; }
+		if (settingsVisible) { settingsVisible = false; settingsOverlay.visible = false; settingsText.visible = false; return; }
+		if (findBarVisible) {
+			findBarVisible = false; findMode = false; gotoLineMode = false;
+			findBarBg.visible = false; findBarBorder.visible = false;
+			findLabel.visible = false; findInputText.visible = false;
+			findResultText.visible = false; findOptionsText.visible = false;
 			return;
 		}
 		if (isDirty) saveFile();
@@ -512,86 +1671,316 @@ function update(elapsed:Float) {
 		return;
 	}
 
-	if (FlxG.keys.pressed.CONTROL) {
-		if (FlxG.keys.justPressed.S) { saveFile(); return; }
-		if (FlxG.keys.justPressed.Z && !FlxG.keys.pressed.SHIFT) { undo(); return; }
-		if (FlxG.keys.justPressed.Z && FlxG.keys.pressed.SHIFT) { redo(); return; }
-		if (FlxG.keys.justPressed.Y) { redo(); return; }
-		if (FlxG.keys.justPressed.F) {
-			findMode = !findMode;
-			findBg.visible = findMode;
-			findLabelText.visible = findMode;
-			findResultText.visible = findMode;
-			if (findMode) {
-				findQuery = "";
-				findLabelText.text = "Find: |  (type to search, ENTER to confirm)";
-				findResultText.text = "";
-			}
-			return;
-		}
+	// F1: Shortcuts
+	if (FlxG.keys.justPressed.F1) {
+		shortcutsVisible = !shortcutsVisible;
+		shortcutsOverlay.visible = shortcutsVisible;
+		shortcutsText.visible = shortcutsVisible;
+		return;
 	}
 
-	if (FlxG.keys.justPressed.F5) { validateSyntax(); return; }
-	if (FlxG.keys.justPressed.F6) { formatCode(); return; }
+	// F4: Settings
+	if (FlxG.keys.justPressed.F4) {
+		settingsVisible = !settingsVisible;
+		settingsOverlay.visible = settingsVisible;
+		settingsText.visible = settingsVisible;
+		if (settingsVisible) {
+			var s = "EDITOR SETTINGS\n\n";
+			s += "1. Auto-indent:        " + (autoIndent ? "[ON]" : "[OFF]") + "\n";
+			s += "2. Auto-close brackets: " + (autoCloseBrackets ? "[ON]" : "[OFF]") + "\n";
+			s += "3. Show line numbers:  " + (showLineNumbers ? "[ON]" : "[OFF]") + "\n";
+			s += "4. Highlight cur line:  " + (highlightCurrentLine ? "[ON]" : "[OFF]") + "\n";
+			s += "5. Show minimap:       " + (showMinimap ? "[ON]" : "[OFF]") + "\n";
+			s += "6. Show visual panel:  " + (showVisualPanel ? "[ON]" : "[OFF]") + "\n";
+			s += "7. Word wrap:          " + (wordWrap ? "[ON]" : "[OFF]") + "\n";
+			s += "8. Tab size:           " + tabSize + "\n\n";
+			s += "Press 1-8 to toggle. F4 or ESC to close.";
+			settingsText.text = s;
+		}
+		return;
+	}
 
-	if (findMode) {
-		if (FlxG.keys.justPressed.BACKSPACE) {
-			findQuery = findQuery.substr(0, Math.max(0, findQuery.length - 1));
-			findLabelText.text = "Find: " + findQuery + "|";
-			performFind();
-		} else if (FlxG.keys.justPressed.ENTER) {
-			findLabelText.text = "Find: \"" + findQuery + "\"  (" + findResults.length + " matches)";
-		} else {
-			for (code in 32...127) {
-				if (FlxG.keys.justPressed(cast code)) {
-					findQuery += String.fromCharCode(code);
-					findLabelText.text = "Find: " + findQuery + "|";
-					performFind();
-					break;
+	// Settings toggle
+	if (settingsVisible) {
+		for (code in 49...57) {
+			if (FlxG.keys.justPressed(cast code)) {
+				var idx = code - 49;
+				switch(idx) {
+					case 0: autoIndent = !autoIndent;
+					case 1: autoCloseBrackets = !autoCloseBrackets;
+					case 2: showLineNumbers = !showLineNumbers; lineNumBg.visible = showLineNumbers; lineNumText.visible = showLineNumbers;
+					case 3: highlightCurrentLine = !highlightCurrentLine;
+					case 4: showMinimap = !showMinimap; minimapBg.visible = showMinimap; minimapCode.visible = showMinimap; minimapViewport.visible = showMinimap;
+					case 5: showVisualPanel = !showVisualPanel; visualBg.visible = showVisualPanel; visualGroup.visible = showVisualPanel;
+					case 6: wordWrap = !wordWrap;
+					case 7: tabSize = tabSize == 4 ? 2 : 4;
 				}
+				settingsText.text = "EDITOR SETTINGS\n\n1. Auto-indent:        " + (autoIndent ? "[ON]" : "[OFF]") + "\n2. Auto-close brackets: " + (autoCloseBrackets ? "[ON]" : "[OFF]") + "\n3. Show line numbers:  " + (showLineNumbers ? "[ON]" : "[OFF]") + "\n4. Highlight cur line:  " + (highlightCurrentLine ? "[ON]" : "[OFF]") + "\n5. Show minimap:       " + (showMinimap ? "[ON]" : "[OFF]") + "\n6. Show visual panel:  " + (showVisualPanel ? "[ON]" : "[OFF]") + "\n7. Word wrap:          " + (wordWrap ? "[ON]" : "[OFF]") + "\n8. Tab size:           " + tabSize + "\n\nPress 1-8 to toggle. F4 or ESC to close.";
+				break;
 			}
 		}
 		return;
 	}
 
+	// F5: Validate
+	if (FlxG.keys.justPressed.F5) { validateSyntax(); return; }
+
+	// F6: Format
+	if (FlxG.keys.justPressed.F6) { formatCode(); return; }
+
+	// F2: Next bookmark
+	if (FlxG.keys.justPressed.F2 && !FlxG.keys.pressed.CONTROL) { nextBookmark(); return; }
+
+	// Ctrl shortcuts
+	if (FlxG.keys.pressed.CONTROL) {
+		if (FlxG.keys.justPressed.S) { saveFile(); return; }
+		if (FlxG.keys.justPressed.Z && !FlxG.keys.pressed.SHIFT) { undo(); return; }
+		if (FlxG.keys.justPressed.Z && FlxG.keys.pressed.SHIFT) { redo(); return; }
+		if (FlxG.keys.justPressed.Y) { redo(); return; }
+		if (FlxG.keys.justPressed.F) { toggleFindBar(); return; }
+		if (FlxG.keys.justPressed.N) { newFileFromTemplate(); return; }
+		if (FlxG.keys.justPressed.W) { if (activeTabIndex >= 0) closeTab(activeTabIndex); return; }
+		if (FlxG.keys.justPressed.G) { goToLine(); return; }
+		if (FlxG.keys.justPressed.P) { goToFunction(); return; }
+		if (FlxG.keys.justPressed.A) { selectAll(); return; }
+		if (FlxG.keys.justPressed.D) { duplicateLine(); return; }
+		if (FlxG.keys.justPressed.F2) { toggleBookmark(); return; }
+		if (FlxG.keys.justPressed.TAB) {
+			if (tabs.length > 1) {
+				var next = FlxG.keys.pressed.SHIFT ? (activeTabIndex - 1 + tabs.length) % tabs.length : (activeTabIndex + 1) % tabs.length;
+				switchTab(next);
+			}
+			return;
+		}
+		if (FlxG.keys.justPressed.C) {
+			if (hasSelection) {
+				clipboard = getSelectedText();
+				showNotification("Copied " + clipboard.length + " chars", 1.5);
+			}
+			return;
+		}
+		if (FlxG.keys.justPressed.X) {
+			if (hasSelection) {
+				clipboard = getSelectedText();
+				deleteSelection();
+				showNotification("Cut " + clipboard.length + " chars", 1.5);
+			}
+			return;
+		}
+		if (FlxG.keys.justPressed.V) {
+			if (clipboard.length > 0) insertText(clipboard);
+			return;
+		}
+		if (FlxG.keys.justPressed.R && findBarVisible) {
+			findUseRegex = !findUseRegex;
+			findOptionsText.text = "Regex: " + (findUseRegex ? "ON" : "OFF") + "  |  ENTER:Confirm  ESC:Close";
+			if (findQuery.length > 0) performFind();
+			return;
+		}
+		// Ctrl+/ toggle comment
+		if (FlxG.keys.justPressed.SLASH) { toggleLineComment(); return; }
+	}
+
+	// Alt+UP/DOWN move line
+	if (FlxG.keys.pressed.ALT) {
+		if (FlxG.keys.justPressed.UP) { moveLineUp(); return; }
+		if (FlxG.keys.justPressed.DOWN) { moveLineDown(); return; }
+	}
+
+	// Find mode input
+	if (findMode && findBarVisible && !gotoLineMode) {
+		if (FlxG.keys.justPressed.BACKSPACE) {
+			findQuery = findQuery.substr(0, Math.max(0, findQuery.length - 1));
+			findInputText.text = findQuery + "|";
+			performFind();
+			return;
+		}
+		if (FlxG.keys.justPressed.ENTER) {
+			findNext();
+			return;
+		}
+		if (FlxG.keys.justPressed.TAB) {
+			findNext();
+			return;
+		}
+		for (code in 32...127) {
+			if (FlxG.keys.justPressed(cast code)) {
+				findQuery += String.fromCharCode(code);
+				findInputText.text = findQuery + "|";
+				performFind();
+				break;
+			}
+		}
+		return;
+	}
+
+	// Go to line mode input
+	if (gotoLineMode && findBarVisible) {
+		if (FlxG.keys.justPressed.BACKSPACE) {
+			gotoLineInput = gotoLineInput.substr(0, Math.max(0, gotoLineInput.length - 1));
+			findInputText.text = gotoLineInput + "|";
+			return;
+		}
+		if (FlxG.keys.justPressed.ENTER) {
+			var lineNum = Std.parseInt(gotoLineInput);
+			if (lineNum != null && lineNum >= 1 && lineNum <= lines.length) {
+				cursorLine = lineNum - 1;
+				cursorCol = 0;
+				ensureLineVisible(cursorLine);
+				refreshCode();
+				refreshStatus();
+				showNotification("Jumped to line " + lineNum, 1.5);
+			}
+			gotoLineMode = false;
+			findBarVisible = false;
+			findBarBg.visible = false; findBarBorder.visible = false;
+			findLabel.visible = false; findInputText.visible = false;
+			findResultText.visible = false; findOptionsText.visible = false;
+			return;
+		}
+		for (code in 48...58) {
+			if (FlxG.keys.justPressed(cast code)) {
+				gotoLineInput += String.fromCharCode(code);
+				findInputText.text = gotoLineInput + "|";
+				break;
+			}
+		}
+		return;
+	}
+
+	// Cursor movement
 	if (FlxG.keys.justPressed.DOWN) {
+		if (FlxG.keys.pressed.SHIFT) {
+			if (!hasSelection) { selectionStartLine = cursorLine; selectionStartCol = cursorCol; hasSelection = true; }
+		} else { hasSelection = false; }
 		cursorLine = Math.min(lines.length - 1, cursorLine + 1);
+		cursorCol = Math.min(cursorCol, lines[cursorLine].length);
+		if (FlxG.keys.pressed.SHIFT) { selectionEndLine = cursorLine; selectionEndCol = cursorCol; }
+		ensureLineVisible(cursorLine);
 		refreshCode();
 		refreshStatus();
 	}
 	if (FlxG.keys.justPressed.UP) {
+		if (FlxG.keys.pressed.SHIFT) {
+			if (!hasSelection) { selectionStartLine = cursorLine; selectionStartCol = cursorCol; hasSelection = true; }
+		} else { hasSelection = false; }
 		cursorLine = Math.max(0, cursorLine - 1);
+		cursorCol = Math.min(cursorCol, lines[cursorLine].length);
+		if (FlxG.keys.pressed.SHIFT) { selectionEndLine = cursorLine; selectionEndCol = cursorCol; }
+		ensureLineVisible(cursorLine);
 		refreshCode();
 		refreshStatus();
 	}
 	if (FlxG.keys.justPressed.RIGHT) {
-		if (cursorLine < lines.length) cursorCol = Math.min(lines[cursorLine].length, cursorCol + 1);
+		if (FlxG.keys.pressed.SHIFT) {
+			if (!hasSelection) { selectionStartLine = cursorLine; selectionStartCol = cursorCol; hasSelection = true; }
+		} else { hasSelection = false; }
+		if (cursorCol < lines[cursorLine].length) {
+			cursorCol++;
+		} else if (cursorLine < lines.length - 1) {
+			cursorLine++;
+			cursorCol = 0;
+		}
+		if (FlxG.keys.pressed.SHIFT) { selectionEndLine = cursorLine; selectionEndCol = cursorCol; }
+		ensureLineVisible(cursorLine);
+		refreshCode();
 		refreshStatus();
 	}
 	if (FlxG.keys.justPressed.LEFT) {
-		cursorCol = Math.max(0, cursorCol - 1);
+		if (FlxG.keys.pressed.SHIFT) {
+			if (!hasSelection) { selectionStartLine = cursorLine; selectionStartCol = cursorCol; hasSelection = true; }
+		} else { hasSelection = false; }
+		if (cursorCol > 0) {
+			cursorCol--;
+		} else if (cursorLine > 0) {
+			cursorLine--;
+			cursorCol = lines[cursorLine].length;
+		}
+		if (FlxG.keys.pressed.SHIFT) { selectionEndLine = cursorLine; selectionEndCol = cursorCol; }
+		ensureLineVisible(cursorLine);
+		refreshCode();
 		refreshStatus();
 	}
-
+	if (FlxG.keys.justPressed.HOME) {
+		var indent = getLineIndent(cursorLine);
+		cursorCol = (cursorCol == indent.length) ? 0 : indent.length;
+		refreshCode();
+		refreshStatus();
+	}
+	if (FlxG.keys.justPressed.END) {
+		cursorCol = lines[cursorLine].length;
+		refreshCode();
+		refreshStatus();
+	}
 	if (FlxG.keys.justPressed.PAGEDOWN) {
-		var visLines = Std.int((FlxG.height - TOP_H - TAB_H - STATUS_H) / lineH);
-		cursorLine = Math.min(lines.length - 1, cursorLine + visLines);
+		var page = Std.int((H - HEADER_H - TAB_BAR_H - FOOTER_H) / LINE_H);
+		cursorLine = Math.min(lines.length - 1, cursorLine + page);
+		cursorCol = Math.min(cursorCol, lines[cursorLine].length);
+		ensureLineVisible(cursorLine);
 		refreshCode();
 		refreshStatus();
 	}
 	if (FlxG.keys.justPressed.PAGEUP) {
-		var visLines = Std.int((FlxG.height - TOP_H - TAB_H - STATUS_H) / lineH);
-		cursorLine = Math.max(0, cursorLine - visLines);
+		var page = Std.int((H - HEADER_H - TAB_BAR_H - FOOTER_H) / LINE_H);
+		cursorLine = Math.max(0, cursorLine - page);
+		cursorCol = Math.min(cursorCol, lines[cursorLine].length);
+		ensureLineVisible(cursorLine);
 		refreshCode();
 		refreshStatus();
 	}
 
+	// Text editing
+	if (FlxG.keys.justPressed.ENTER && !findBarVisible) {
+		insertNewline();
+		return;
+	}
+	if (FlxG.keys.justPressed.BACKSPACE && !findBarVisible) {
+		deleteCharBackward();
+		return;
+	}
+	if (FlxG.keys.justPressed.DELETE && !findBarVisible) {
+		deleteCharForward();
+		return;
+	}
+	if (FlxG.keys.justPressed.TAB && !FlxG.keys.pressed.CONTROL && !findBarVisible) {
+		if (FlxG.keys.pressed.SHIFT) {
+			unindentSelection();
+		} else if (hasSelection) {
+			indentSelection();
+		} else {
+			insertText("\t");
+		}
+		return;
+	}
+
+	// Character input
+	if (!findBarVisible) {
+		for (code in 32...127) {
+			if (FlxG.keys.justPressed(cast code)) {
+				var ch = String.fromCharCode(code);
+				// Auto-close brackets
+				if (autoCloseBrackets && BRACKET_PAIRS.exists(ch)) {
+					insertText(ch + BRACKET_PAIRS.get(ch));
+					cursorCol--;
+					refreshCode();
+					refreshStatus();
+				} else {
+					insertText(ch);
+				}
+				break;
+			}
+		}
+	}
+
+	// Mouse wheel scroll
 	if (FlxG.mouse.wheel != 0) {
-		scrollY -= FlxG.mouse.wheel * lineH * 3;
+		scrollY -= FlxG.mouse.wheel * LINE_H * 3;
 		if (scrollY < 0) scrollY = 0;
-		var maxScroll = (lines.length * lineH) - (FlxG.height - TOP_H - TAB_H - STATUS_H);
+		var maxScroll = (lines.length * LINE_H) - (H - HEADER_H - TAB_BAR_H - FOOTER_H);
+		if (findBarVisible) maxScroll -= FIND_BAR_H;
 		if (maxScroll < 0) maxScroll = 0;
 		if (scrollY > maxScroll) scrollY = maxScroll;
 		refreshCode();
+		refreshMinimap();
 	}
 }
