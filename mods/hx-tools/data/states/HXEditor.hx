@@ -226,6 +226,13 @@ var CLOSE_BRACKETS:Map<String, String> = [")" => "(", "]" => "[", "}" => "{"];
 // =============================================================================
 //  CREATE
 // =============================================================================
+
+function countMapKeys(m:Dynamic):Int {
+	var count = 0;
+	for (k in m.keys()) count++;
+	return count;
+}
+
 function create() {
 	FlxG.mouse.visible = true;
 	W = FlxG.width;
@@ -288,7 +295,7 @@ function createHeader() {
 
 	headerHints = new FlxText(W - 520, 10, 510, "Ctrl+S:Save  Ctrl+Z:Undo  Ctrl+F:Find  F5:Validate  F6:Format  F1:Help  ESC:Exit", 9);
 	headerHints.color = C_DIMMER;
-	headerHints.alignment = RIGHT;
+	headerHints.alignment = "right";
 	add(headerHints);
 }
 
@@ -357,7 +364,7 @@ function createEditor() {
 
 	lineNumText = new FlxText(ex + 4, ey + 4, LINE_NUM_W - 8, "", FONT_SIZE - 2);
 	lineNumText.color = C_LINE_NUM;
-	lineNumText.alignment = RIGHT;
+	lineNumText.alignment = "right";
 	add(lineNumText);
 
 	codeText = new FlxText(ex + LINE_NUM_W + 4, ey + 4, ew - LINE_NUM_W - 8, "", FONT_SIZE);
@@ -419,7 +426,7 @@ function createFindBar() {
 
 	findResultText = new FlxText(ex + ew - 180, ey + 6, 170, "", 11);
 	findResultText.color = C_DIM;
-	findResultText.alignment = RIGHT;
+	findResultText.alignment = "right";
 	findResultText.visible = false;
 	add(findResultText);
 
@@ -443,12 +450,12 @@ function createFooter() {
 
 	footerCenter = new FlxText(W / 2 - 200, fy + 5, 400, "", 10);
 	footerCenter.color = C_DIMMER;
-	footerCenter.alignment = CENTER;
+	footerCenter.alignment = "center";
 	add(footerCenter);
 
 	footerRight = new FlxText(W - 412, fy + 5, 400, "", 10);
 	footerRight.color = C_DIM;
-	footerRight.alignment = RIGHT;
+	footerRight.alignment = "right";
 	add(footerRight);
 }
 
@@ -516,7 +523,7 @@ function createOverlays() {
 
 	notifLabel = new FlxText(W / 2 - 190, 55, 380, "", 12);
 	notifLabel.color = C_TEXT;
-	notifLabel.alignment = CENTER;
+	notifLabel.alignment = "center";
 	notifLabel.visible = false;
 	add(notifLabel);
 }
@@ -645,7 +652,7 @@ function closeTab(index:Int) {
 }
 
 function refreshTabs() {
-	tabGroup.clear();
+	while(tabGroup.members.length > 0) { tabGroup.remove(tabGroup.members[0], true); }
 	var xOff:Float = 4;
 	for (i in 0...tabs.length) {
 		var tab = tabs[i];
@@ -1070,35 +1077,15 @@ function performFind() {
 
 	var q = findCaseSensitive ? findQuery : findQuery.toLowerCase();
 
-	if (findUseRegex) {
-		try {
-			var flags = findCaseSensitive ? "g" : "gi";
-			var reg = new EReg(findQuery, flags);
-			for (i in 0...lines.length) {
-				var line = lines[i];
-				var pos = 0;
-				while (reg.matchSub(line, pos)) {
-					var mp = reg.matchedPos();
-					findResults.push({ line: i, col: mp.pos, len: mp.len });
-					pos = mp.pos + mp.len;
-					if (mp.len == 0) break;
-				}
-			}
-		} catch(e:Dynamic) {
-			findResultText.text = "Invalid regex";
-			findResultText.color = C_ERROR;
-			return;
-		}
-	} else {
-		for (i in 0...lines.length) {
-			var line = findCaseSensitive ? lines[i] : lines[i].toLowerCase();
-			var pos = 0;
-			while (true) {
-				var idx = line.indexOf(q, pos);
-				if (idx < 0) break;
-				findResults.push({ line: i, col: idx, len: findQuery.length });
-				pos = idx + findQuery.length;
-			}
+	var q = findCaseSensitive ? findQuery : findQuery.toLowerCase();
+	for (i in 0...lines.length) {
+		var line = findCaseSensitive ? lines[i] : lines[i].toLowerCase();
+		var pos = 0;
+		while (true) {
+			var idx = line.indexOf(q, pos);
+			if (idx < 0) break;
+			findResults.push({ line: i, col: idx, len: findQuery.length });
+			pos = idx + findQuery.length;
 		}
 	}
 
@@ -1143,15 +1130,7 @@ function performReplace() {
 	if (findResults.length == 0 || findQuery.length == 0) return;
 	pushUndo();
 
-	if (findUseRegex) {
-		try {
-			var flags = findCaseSensitive ? "g" : "gi";
-			var reg = new EReg(findQuery, flags);
-			content = reg.replace(content, replaceQuery);
-		} catch(e:Dynamic) { return; }
-	} else {
-		content = content.split(findQuery).join(replaceQuery);
-	}
+	content = content.split(findQuery).join(replaceQuery);
 
 	lines = content.split("\n");
 	totalLines = lines.length;
@@ -1170,54 +1149,101 @@ function parseContent() {
 	parsedPkg = ""; parsedClass = ""; parsedExtends = ""; parsedImplements = "";
 	parsedFuncs = []; parsedVars = []; parsedImports = [];
 
-	var pkgReg = new EReg("^package\\s+([\\w.]+)\\s*;", "m");
-	if (pkgReg.match(content)) parsedPkg = pkgReg.matched(1);
-
-	var clsReg = new EReg("class\\s+(\\w+)(?:\\s+extends\\s+([\\w.]+))?(?:\\s+implements\\s+([\\w., ]+))?", "");
-	if (clsReg.match(content)) {
-		parsedClass = clsReg.matched(1);
-		if (clsReg.matched(2) != null) parsedExtends = clsReg.matched(2);
-		if (clsReg.matched(3) != null) parsedImplements = clsReg.matched(3);
+	var pkgIdx = content.indexOf("package ");
+	if (pkgIdx >= 0) {
+		var pkgEnd = content.indexOf(";", pkgIdx);
+		if (pkgEnd >= 0) parsedPkg = StringTools.trim(content.substr(pkgIdx + 8, pkgEnd - pkgIdx - 8));
 	}
 
-	var impReg = new EReg("^import\\s+([\\w.*]+)\\s*;", "gm");
-	var pos = 0;
-	while (impReg.matchSub(content, pos)) {
-		parsedImports.push({ name: impReg.matched(1), line: content.substr(0, impReg.matchedPos().pos).split("\n").length });
-		pos = impReg.matchedPos().pos + impReg.matchedPos().len;
+	var clsIdx = content.indexOf("class ");
+	if (clsIdx >= 0) {
+		var afterCls = content.substr(clsIdx + 6);
+		var spIdx = afterCls.indexOf(" ");
+		var brIdx = afterCls.indexOf("{");
+		var nlIdx = afterCls.indexOf("\n");
+		var endIdx = spIdx >= 0 ? spIdx : (brIdx >= 0 ? brIdx : nlIdx);
+		if (endIdx > 0) parsedClass = StringTools.trim(afterCls.substr(0, endIdx));
+		var extIdx = content.indexOf("extends ");
+		if (extIdx >= 0) {
+			var afterExt = content.substr(extIdx + 8);
+			var spIdx2 = afterExt.indexOf(" ");
+			var nlIdx2 = afterExt.indexOf("\n");
+			var endIdx2 = spIdx2 >= 0 ? spIdx2 : nlIdx2;
+			if (endIdx2 < 0) endIdx2 = afterExt.length;
+			if (endIdx2 > 0) parsedExtends = StringTools.trim(afterExt.substr(0, endIdx2));
+		}
+		var implIdx = content.indexOf("implements ");
+		if (implIdx >= 0) {
+			var afterImpl = content.substr(implIdx + 11);
+			var brIdx2 = afterImpl.indexOf("{");
+			var nlIdx3 = afterImpl.indexOf("\n");
+			var endIdx3 = brIdx2 >= 0 ? brIdx2 : nlIdx3;
+			if (endIdx3 < 0) endIdx3 = afterImpl.length;
+			if (endIdx3 > 0) parsedImplements = StringTools.trim(afterImpl.substr(0, endIdx3));
+		}
 	}
 
-	var funcReg = new EReg("((?:public|private|static|inline|override|dynamic)\\s+)*function\\s+(\\w+)\\s*\\(([^)]*)\\)", "g");
-	pos = 0;
-	while (funcReg.matchSub(content, pos)) {
-		var mods = funcReg.matched(1) != null ? funcReg.matched(1) : "";
-		parsedFuncs.push({
-			name: funcReg.matched(2),
-			params: funcReg.matched(3) != null ? funcReg.matched(3) : "",
-			pub: mods.indexOf("public") >= 0,
-			stat: mods.indexOf("static") >= 0,
-			over: mods.indexOf("override") >= 0,
-			inl: mods.indexOf("inline") >= 0,
-			line: content.substr(0, funcReg.matchedPos().pos).split("\n").length
-		});
-		pos = funcReg.matchedPos().pos + funcReg.matchedPos().len;
+	// Parse imports
+	var iPos = 0;
+	while (true) {
+		var iIdx = content.indexOf("import ", iPos);
+		if (iIdx < 0) break;
+		var semiIdx = content.indexOf(";", iIdx);
+		var impName = semiIdx >= 0 ? StringTools.trim(content.substr(iIdx + 7, semiIdx - iIdx - 7)) : "";
+		var impLine = content.substr(0, iIdx).split("\n").length;
+		if (impName.length > 0) parsedImports.push({ name: impName, line: impLine });
+		iPos = iIdx + 7;
 	}
 
-	var varReg = new EReg("((?:public|private|static|final)\\s+)*var\\s+(\\w+)\\s*(?::\\s*([\\w<>, ]+))?", "g");
-	pos = 0;
-	while (varReg.matchSub(content, pos)) {
-		var mods = varReg.matched(1) != null ? varReg.matched(1) : "";
-		parsedVars.push({
-			name: varReg.matched(2),
-			type: varReg.matched(3),
-			pub: mods.indexOf("public") >= 0,
-			stat: mods.indexOf("static") >= 0,
-			fin: mods.indexOf("final") >= 0,
-			line: content.substr(0, varReg.matchedPos().pos).split("\n").length
-		});
-		pos = varReg.matchedPos().pos + varReg.matchedPos().len;
+	// Parse functions
+	var fPos = 0;
+	while (true) {
+		var fIdx = content.indexOf("function ", fPos);
+		if (fIdx < 0) break;
+		var fLine = content.substr(0, fIdx).split("\n").length;
+		var afterF = content.substr(fIdx + 9);
+		var pIdx = afterF.indexOf("(");
+		if (pIdx < 0 || pIdx > 40) { fPos = fIdx + 9; continue; }
+		var fName = StringTools.trim(afterF.substr(0, pIdx));
+		if (fName.length == 0 || fName.indexOf(" ") >= 0 || fName.indexOf("\n") >= 0) { fPos = fIdx + 9; continue; }
+		var cpIdx = afterF.indexOf(")");
+		var fParams = cpIdx > pIdx ? afterF.substr(pIdx + 1, cpIdx - pIdx - 1) : "";
+		var lineStart = content.lastIndexOf("\n", fIdx) + 1;
+		var beforeF = content.substr(lineStart, fIdx - lineStart);
+		parsedFuncs.push({ name: fName, params: fParams, pub: beforeF.indexOf("public") >= 0, stat: beforeF.indexOf("static") >= 0, over: beforeF.indexOf("override") >= 0, inl: beforeF.indexOf("inline") >= 0, line: fLine });
+		fPos = fIdx + 9;
 	}
-}
+
+	// Parse variables
+	var vPos = 0;
+	while (true) {
+		var vIdx = content.indexOf("var ", vPos);
+		if (vIdx < 0) break;
+		var vLine = content.substr(0, vIdx).split("\n").length;
+		var afterV = content.substr(vIdx + 4);
+		var endIdx = afterV.length;
+		for (ch in [" ", ":", ";", "="]) { var ci = afterV.indexOf(ch); if (ci >= 0 && ci < endIdx) endIdx = ci; }
+		var vName = StringTools.trim(afterV.substr(0, endIdx));
+		if (vName.length == 0 || vName.indexOf("\n") >= 0) { vPos = vIdx + 4; continue; }
+		var vType = "";
+		var colonIdx = afterV.indexOf(":");
+		if (colonIdx >= 0 && colonIdx < endIdx + 30) {
+			var typeEnd = afterV.indexOf(";", colonIdx);
+			if (typeEnd < 0) typeEnd = afterV.indexOf("=", colonIdx);
+			if (typeEnd < 0) typeEnd = colonIdx + 20;
+			vType = StringTools.trim(afterV.substr(colonIdx + 1, typeEnd - colonIdx - 1));
+		}
+		var lineStart = content.lastIndexOf("\n", vIdx) + 1;
+		var beforeV = content.substr(lineStart, vIdx - lineStart);
+		parsedVars.push({ name: vName, type: vType, pub: beforeV.indexOf("public") >= 0, stat: beforeV.indexOf("static") >= 0, fin: beforeV.indexOf("final") >= 0, line: vLine });
+		vPos = vIdx + 4;
+	}
+
+		var lineStart = content.lastIndexOf("\n", vIdx) + 1;
+		var beforeV = content.substr(lineStart, vIdx - lineStart);
+		parsedVars.push({ name: vName, type: vType, pub: beforeV.indexOf("public") >= 0, stat: beforeV.indexOf("static") >= 0, fin: beforeV.indexOf("final") >= 0, line: vLine });
+		vPos = vIdx + 4;
+	}
 
 // =============================================================================
 //  REFRESH FUNCTIONS
@@ -1243,18 +1269,18 @@ function refreshCode() {
 	var endLine = Math.min(startLine + visLines, lines.length);
 
 	// Line numbers
-	var lnBuf = new StringBuf();
+	var lnBuf = "";
 	for (i in startLine...endLine) {
-		lnBuf.add("" + (i + 1) + "\n");
+		lnBuf += "" + (i + 1) + "\n";
 	}
-	lineNumText.text = lnBuf.toString();
+	lineNumText.text = lnBuf;
 
 	// Code display
-	var codeBuf = new StringBuf();
+	var codeBuf = "";
 	for (i in startLine...endLine) {
-		codeBuf.add(lines[i] + "\n");
+		codeBuf += lines[i] + "\n";
 	}
-	codeText.text = codeBuf.toString();
+	codeText.text = codeBuf;
 
 	// Current line highlight
 	if (highlightCurrentLine && cursorLine >= startLine && cursorLine < endLine) {
@@ -1345,7 +1371,7 @@ function showBracketMatch(line:Int, col:Int) {
 }
 
 function refreshVisual() {
-	visualGroup.clear();
+	while(visualGroup.members.length > 0) { visualGroup.remove(visualGroup.members[0], true); }
 	var y:Float = HEADER_H + TAB_BAR_H + 28;
 	var maxY = H - FOOTER_H - 10;
 
@@ -1421,7 +1447,7 @@ function refreshVisual() {
 
 	y = addVisualItem("---", C_DIMMER, 10, y + 8, 10);
 	y = addVisualItem("Lines: " + lines.length + "  Funcs: " + parsedFuncs.length + "  Vars: " + parsedVars.length, FlxColor.fromRGB(75, 75, 95), 10, y, 14);
-	y = addVisualItem("Bookmarks: " + Lambda.count(bookmarks), FlxColor.fromRGB(75, 75, 95), 10, y + 2, 14);
+	y = addVisualItem("Bookmarks: " + countMapKeys(bookmarks), FlxColor.fromRGB(75, 75, 95), 10, y + 2, 14);
 }
 
 function addVisualItem(text:String, color:Int, x:Float, y:Float, h:Float):Float {
@@ -1618,7 +1644,7 @@ function toggleBookmark() {
 }
 
 function nextBookmark() {
-	if (Lambda.count(bookmarks) == 0) { showNotification("No bookmarks", 1.5); return; }
+	if (countMapKeys(bookmarks) == 0) { showNotification("No bookmarks", 1.5); return; }
 	var bookmarkLines:Array<Int> = [];
 	for (k in bookmarks.keys()) bookmarkLines.push(k);
 	bookmarkLines.sort(Reflect.compare);
@@ -1653,7 +1679,7 @@ function update(elapsed:Float) {
 	}
 
 	// Cursor blink
-	cursorSpr.alpha = (Math.sin(FlxG.game.ticks * 0.005) > 0) ? 0.9 : 0.2;
+	if (cursorSpr != null) { if ((Math.sin(FlxG.game.ticks * 0.005) > 0)) { cursorSpr.alpha = 0.9; } else { cursorSpr.alpha = 0.2; } }
 
 	// ESC
 	if (FlxG.keys.justPressed.ESCAPE) {

@@ -255,6 +255,13 @@ var HAXE_TYPES:Array<String> = [
 // =============================================================================
 //  CREATE
 // =============================================================================
+
+function countMapKeys(m:Dynamic):Int {
+	var count = 0;
+	for (k in m.keys()) count++;
+	return count;
+}
+
 function create() {
 	FlxG.mouse.visible = true;
 	W = FlxG.width;
@@ -321,7 +328,7 @@ function createHeader() {
 
 	var rightHint = new FlxText(W - 500, 10, 490, "F1:Shortcuts  F2:Sort  F3:Stats  F4:Settings  Ctrl+E:Edit  Ctrl+F:Search  TAB:Switch Cat", 9);
 	rightHint.color = C_DIMMER;
-	rightHint.alignment = RIGHT;
+	rightHint.alignment = "right";
 	add(rightHint);
 }
 
@@ -359,7 +366,7 @@ function createCategoryPanel() {
 
 	catPanelCount = new FlxText(CAT_W - 70, py + 6, 60, "", 10);
 	catPanelCount.color = C_DIMMER;
-	catPanelCount.alignment = RIGHT;
+	catPanelCount.alignment = "right";
 	add(catPanelCount);
 
 	var catSep = new FlxSprite(8, py + 22).makeGraphic(CAT_W - 16, 1, C_BORDER);
@@ -397,7 +404,7 @@ function createSearchBar() {
 
 	searchOptionsText = new FlxText(sx + LIST_W - 120, sy + 8, 110, "", 9);
 	searchOptionsText.color = C_DIMMER;
-	searchOptionsText.alignment = RIGHT;
+	searchOptionsText.alignment = "right";
 	add(searchOptionsText);
 
 	var searchSep = new FlxSprite(sx, sy + SEARCH_H - 1).makeGraphic(LIST_W, 1, C_BORDER);
@@ -424,12 +431,12 @@ function createFileListPanel() {
 
 	listPanelCount = new FlxText(CAT_W + LIST_W - 110, py + 6, 100, "", 10);
 	listPanelCount.color = C_DIMMER;
-	listPanelCount.alignment = RIGHT;
+	listPanelCount.alignment = "right";
 	add(listPanelCount);
 
 	listSortText = new FlxText(CAT_W + 12, py + 6, LIST_W - 24, "", 9);
 	listSortText.color = C_DIMMER;
-	listSortText.alignment = RIGHT;
+	listSortText.alignment = "right";
 	add(listSortText);
 
 	var listSep = new FlxSprite(CAT_W + 8, py + 22).makeGraphic(LIST_W - 16, 1, C_BORDER);
@@ -446,7 +453,7 @@ function createFileListPanel() {
 
 	listEmptyText = new FlxText(CAT_W + 20, py + 40, LIST_W - 40, "No files found.\n\nTry a different search or category.", 12);
 	listEmptyText.color = C_DIM;
-	listEmptyText.alignment = CENTER;
+	listEmptyText.alignment = "center";
 	listEmptyText.visible = false;
 	add(listEmptyText);
 }
@@ -545,12 +552,12 @@ function createFooter() {
 
 	footerCenterText = new FlxText(W / 2 - 200, fy + 6, 400, "", 10);
 	footerCenterText.color = C_DIMMER;
-	footerCenterText.alignment = CENTER;
+	footerCenterText.alignment = "center";
 	add(footerCenterText);
 
 	footerRightText = new FlxText(W - 412, fy + 6, 400, "", 10);
 	footerRightText.color = C_DIM;
-	footerRightText.alignment = RIGHT;
+	footerRightText.alignment = "right";
 	add(footerRightText);
 }
 
@@ -633,7 +640,7 @@ function createOverlays() {
 
 	notifText = new FlxText(W / 2 - 190, 56, 380, "", 12);
 	notifText.color = C_TEXT;
-	notifText.alignment = CENTER;
+	notifText.alignment = "center";
 	notifText.visible = false;
 	add(notifText);
 }
@@ -692,63 +699,103 @@ function makeFileInfo(path:String):Dynamic {
 		var lns = c.split("\n");
 		var pkg = ""; var cls = ""; var ext = "";
 
-		var pkgReg = new EReg("^package\\s+([\\w.]+)\\s*;", "m");
-		if (pkgReg.match(c)) pkg = pkgReg.matched(1);
+	// Parse package using string methods
+	var pkgIdx = c.indexOf("package ");
+	if (pkgIdx >= 0) {
+		var pkgEnd = c.indexOf(";", pkgIdx);
+		if (pkgEnd >= 0) pkg = StringTools.trim(c.substr(pkgIdx + 8, pkgEnd - pkgIdx - 8));
+	}
 
-		var clsReg = new EReg("(?:class|interface|abstract|enum)\\s+(\\w+)", "");
-		if (clsReg.match(c)) cls = clsReg.matched(1);
-		else cls = haxe.io.Path.withoutExtension(haxe.io.Path.withoutDirectory(path));
+	// Parse class name
+	var clsIdx = c.indexOf("class ");
+	if (clsIdx >= 0) {
+		var afterCls = c.substr(clsIdx + 6);
+		var spIdx = afterCls.indexOf(" ");
+		var brIdx = afterCls.indexOf("{");
+		var nlIdx = afterCls.indexOf("\n");
+		var endIdx = spIdx >= 0 ? spIdx : (brIdx >= 0 ? brIdx : nlIdx);
+		if (endIdx > 0) cls = StringTools.trim(afterCls.substr(0, endIdx));
+	} else {
+		cls = haxe.io.Path.withoutExtension(haxe.io.Path.withoutDirectory(path));
+	}
 
-		var extReg = new EReg("extends\\s+([\\w.]+)", "");
-		if (extReg.match(c)) ext = extReg.matched(1);
+	// Parse extends
+	var extIdx = c.indexOf("extends ");
+	if (extIdx >= 0) {
+		var afterExt = c.substr(extIdx + 8);
+		var spIdx = afterExt.indexOf(" ");
+		var nlIdx = afterExt.indexOf("\n");
+		var endIdx = spIdx >= 0 ? spIdx : nlIdx;
+		if (endIdx < 0) endIdx = afterExt.length;
+		if (endIdx > 0) ext = StringTools.trim(afterExt.substr(0, endIdx));
+	}
 
-		var implReg = new EReg("implements\\s+([\\w., ]+)", "");
-		var impls = "";
-		if (implReg.match(c)) impls = implReg.matched(1);
+	// Parse implements
+	var implIdx = c.indexOf("implements ");
+	if (implIdx >= 0) {
+		var afterImpl = c.substr(implIdx + 11);
+		var brIdx = afterImpl.indexOf("{");
+		var nlIdx = afterImpl.indexOf("\n");
+		var endIdx = brIdx >= 0 ? brIdx : nlIdx;
+		if (endIdx < 0) endIdx = afterImpl.length;
+		if (endIdx > 0) impls = StringTools.trim(afterImpl.substr(0, endIdx));
+	}
 
-		var funcs:Array<Dynamic> = [];
-		var funcReg = new EReg("((?:public|private|static|inline|override|dynamic)\\s+)*function\\s+(\\w+)\\s*\\(([^)]*)\\)", "g");
-		var pos = 0;
-		while (funcReg.matchSub(c, pos)) {
-			var mods = funcReg.matched(1) != null ? funcReg.matched(1) : "";
-			var params = funcReg.matched(3) != null ? funcReg.matched(3) : "";
-			funcs.push({
-				name: funcReg.matched(2),
-				params: params,
-				pub: mods.indexOf("public") >= 0,
-				stat: mods.indexOf("static") >= 0,
-				over: mods.indexOf("override") >= 0,
-				inl: mods.indexOf("inline") >= 0,
-				line: c.substr(0, funcReg.matchedPos().pos).split("\n").length
-			});
-			pos = funcReg.matchedPos().pos + funcReg.matchedPos().len;
+	// Parse functions using string search
+	var funcs:Array<Dynamic> = [];
+	var fPos = 0;
+	while (true) {
+		var fIdx = c.indexOf("function ", fPos);
+		if (fIdx < 0) break;
+		var fLine = c.substr(0, fIdx).split("\n").length;
+		var afterF = c.substr(fIdx + 9);
+		var pIdx = afterF.indexOf("(");
+		if (pIdx < 0 || pIdx > 40) { fPos = fIdx + 9; continue; }
+		var fName = StringTools.trim(afterF.substr(0, pIdx));
+		if (fName.length == 0 || fName.indexOf(" ") >= 0 || fName.indexOf("\n") >= 0) { fPos = fIdx + 9; continue; }
+		var cpIdx = afterF.indexOf(")");
+		var fParams = cpIdx > pIdx ? afterF.substr(pIdx + 1, cpIdx - pIdx - 1) : "";
+		var lineStart = c.lastIndexOf("\n", fIdx) + 1;
+		var beforeF = c.substr(lineStart, fIdx - lineStart);
+		funcs.push({ name: fName, params: fParams, pub: beforeF.indexOf("public") >= 0, stat: beforeF.indexOf("static") >= 0, over: beforeF.indexOf("override") >= 0, inl: beforeF.indexOf("inline") >= 0, line: fLine });
+		fPos = fIdx + 9;
+	}
+
+	// Parse variables using string search
+	var vars:Array<Dynamic> = [];
+	var vPos = 0;
+	while (true) {
+		var vIdx = c.indexOf("var ", vPos);
+		if (vIdx < 0) break;
+		var vLine = c.substr(0, vIdx).split("\n").length;
+		var afterV = c.substr(vIdx + 4);
+		var endIdx = afterV.length;
+		for (ch in [" ", ":", ";", "="]) { var ci = afterV.indexOf(ch); if (ci >= 0 && ci < endIdx) endIdx = ci; }
+		var vName = StringTools.trim(afterV.substr(0, endIdx));
+		if (vName.length == 0 || vName.indexOf("\n") >= 0) { vPos = vIdx + 4; continue; }
+		var vType = "";
+		var colonIdx = afterV.indexOf(":");
+		if (colonIdx >= 0 && colonIdx < endIdx + 30) {
+			var typeEnd = afterV.indexOf(";", colonIdx);
+			if (typeEnd < 0) typeEnd = afterV.indexOf("=", colonIdx);
+			if (typeEnd < 0) typeEnd = colonIdx + 20;
+			vType = StringTools.trim(afterV.substr(colonIdx + 1, typeEnd - colonIdx - 1));
 		}
+		var lineStart = c.lastIndexOf("\n", vIdx) + 1;
+		var beforeV = c.substr(lineStart, vIdx - lineStart);
+		vars.push({ name: vName, type: vType, defVal: "", pub: beforeV.indexOf("public") >= 0, stat: beforeV.indexOf("static") >= 0, fin: beforeV.indexOf("final") >= 0, line: vLine });
+		vPos = vIdx + 4;
+	}
 
-		var vars:Array<Dynamic> = [];
-		var varReg = new EReg("((?:public|private|static|final)\\s+)*var\\s+(\\w+)\\s*(?::\\s*([\\w<>, ]+))?\\s*(?:=\\s*([^;]+))?;", "g");
-		pos = 0;
-		while (varReg.matchSub(c, pos)) {
-			var mods = varReg.matched(1) != null ? varReg.matched(1) : "";
-			vars.push({
-				name: varReg.matched(2),
-				type: varReg.matched(3),
-				defVal: varReg.matched(4),
-				pub: mods.indexOf("public") >= 0,
-				stat: mods.indexOf("static") >= 0,
-				fin: mods.indexOf("final") >= 0,
-				line: c.substr(0, varReg.matchedPos().pos).split("\n").length
-			});
-			pos = varReg.matchedPos().pos + varReg.matchedPos().len;
-		}
-
-		var importCount = 0;
-		var impReg = new EReg("^import\\s+", "gm");
-		pos = 0;
-		while (impReg.matchSub(c, pos)) {
-			importCount++;
-			pos = impReg.matchedPos().pos + impReg.matchedPos().len;
-		}
-
+	// Count imports
+	var importCount = 0;
+	var iPos = 0;
+	while (true) {
+		var iIdx = c.indexOf("import ", iPos);
+		if (iIdx < 0) break;
+		importCount++;
+		iPos = iIdx + 7;
+	}
 		var isScript = path.indexOf("data/scripts") >= 0 || path.indexOf("data/states") >= 0;
 		var hasCreate = c.indexOf("function create") >= 0;
 		var hasUpdate = c.indexOf("function update") >= 0;
@@ -969,14 +1016,6 @@ function applySearchFilter() {
 
 		if (fn.indexOf(q) >= 0 || cn.indexOf(q) >= 0 || pk.indexOf(q) >= 0) match = true;
 
-		if (!match && regexSearch) {
-			try {
-				var flags = caseSensitiveSearch ? "" : "i";
-				var reg = new EReg(searchQuery, flags);
-				if (reg.match(f.fileName) || reg.match(f.className) || reg.match(f.package)) match = true;
-			} catch(e:Dynamic) {}
-		}
-
 		if (!match) {
 			var content = caseSensitiveSearch ? f.content : f.content.toLowerCase();
 			if (content.indexOf(q) >= 0) match = true;
@@ -998,7 +1037,7 @@ function refreshAll() {
 
 // ======================== REFRESH CATEGORIES ========================
 function refreshCats() {
-	catItemsGroup.clear();
+	while(catItemsGroup.members.length > 0) { catItemsGroup.remove(catItemsGroup.members[0], true); }
 	var y:Float = HEADER_H + BREADCRUMB_H + 28;
 	var visibleH = H - HEADER_H - BREADCRUMB_H - FOOTER_H - INFO_H - 28;
 	var maxItems = Std.int(visibleH / CAT_LINE_H);
@@ -1025,7 +1064,7 @@ function refreshCats() {
 
 			var countLbl = new FlxText(CAT_W - 55, y + 5, 45, "" + cat.total, 10);
 			countLbl.color = C_DIMMER;
-			countLbl.alignment = RIGHT;
+			countLbl.alignment = "right";
 			catItemsGroup.add(countLbl);
 
 			y += CAT_LINE_H;
@@ -1050,7 +1089,7 @@ function refreshCats() {
 
 					var subCount = new FlxText(CAT_W - 50, y + 4, 40, "" + sub.total, 9);
 					subCount.color = C_DIMMER;
-					subCount.alignment = RIGHT;
+					subCount.alignment = "right";
 					catItemsGroup.add(subCount);
 
 					y += SUB_LINE_H;
@@ -1074,7 +1113,7 @@ function refreshCats() {
 
 // ======================== REFRESH FILE LIST ========================
 function refreshList() {
-	listItemsGroup.clear();
+	while(listItemsGroup.members.length > 0) { listItemsGroup.remove(listItemsGroup.members[0], true); }
 	var py = HEADER_H + BREADCRUMB_H + SEARCH_H + 24;
 	var visibleH = H - HEADER_H - BREADCRUMB_H - SEARCH_H - FOOTER_H - INFO_H - 24;
 	var maxItems = Std.int(visibleH / FILE_LINE_H);
@@ -1113,7 +1152,7 @@ function refreshList() {
 
 		var infoL = new FlxText(CAT_W + LIST_W - 105, y + 4, 95, infoStr, 9);
 		infoL.color = isSel ? C_TEXT2 : C_DIM;
-		infoL.alignment = RIGHT;
+		infoL.alignment = "right";
 		listItemsGroup.add(infoL);
 	}
 
@@ -1131,7 +1170,7 @@ function refreshList() {
 
 // ======================== REFRESH PREVIEW ========================
 function refreshPreview() {
-	previewOverlayGroup.clear();
+	while(previewOverlayGroup.members.length > 0) { previewOverlayGroup.remove(previewOverlayGroup.members[0], true); }
 
 	if (selectedFile == null) {
 		previewTitleText.text = "Preview";
@@ -1153,17 +1192,17 @@ function refreshPreview() {
 	var ph = H - HEADER_H - BREADCRUMB_H - FOOTER_H - 58;
 	var maxLines = Std.int(ph / (PREVIEW_FONT_SIZE + 3));
 
-	var lnBuf = new StringBuf();
-	var codeBuf = new StringBuf();
+	var lnBuf = "";
+	var codeBuf = "";
 	var endLine = Math.min(startLine + maxLines, f.lines.length);
 
 	for (i in startLine...endLine) {
-		lnBuf.add("" + (i + 1) + "\n");
+		lnBuf += "" + (i + 1) + "\n";
 		codeBuf.add(f.lines[i] + "\n");
 	}
 
-	previewLineNums.text = lnBuf.toString();
-	previewCodeText.text = codeBuf.toString();
+	previewLineNums.text = lnBuf;
+	previewCodeText.text = codeBuf;
 
 	if (f.lines.length > maxLines) {
 		previewScrollIndicator.visible = true;
@@ -1595,7 +1634,7 @@ function ensureFileVisible() {
 }
 
 function refreshSettings() {
-	settingsGroup.clear();
+	while(settingsGroup.members.length > 0) { settingsGroup.remove(settingsGroup.members[0], true); }
 	var sx = W / 2 - 180;
 	var sy = H / 2 - 160;
 
@@ -1629,7 +1668,7 @@ function refreshSettings() {
 
 		var valText = new FlxText(sx + 280, y + 4, 80, s.value ? "[ON]" : "[OFF]", 12);
 		valText.color = s.value ? C_SUCCESS : C_DIM;
-		valText.alignment = RIGHT;
+		valText.alignment = "right";
 		settingsGroup.add(valText);
 	}
 
