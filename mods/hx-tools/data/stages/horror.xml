@@ -1,0 +1,17 @@
+<!DOCTYPE codename-engine-stage>
+<stage zoom="0.9" name="horror" folder="stages/horror/" startCamPosX="600" startCamPosY="300">
+	<!-- Horror Basement Stage - Dark and creepy -->
+	<sprite name="bg_walls"      x="-300"  y="-200"  sprite="walls"        scroll="0.6" />
+	<sprite name="pipes"         x="-100"  y="-100"  sprite="pipes"        scroll="0.9" />
+	<sprite name="light_bulb"    x="540"   y="-50"   sprite="bulb"         scroll="0.7" />
+	<girlfriend />
+	<dad />
+	<boyfriend />
+	<sprite name="floor"         x="-300"  y="400"   sprite="floor"        scroll="1.0" />
+	<sprite name="debris"        x="-50"   y="500"   sprite="debris"       scroll="1.1" />
+
+	<high-memory>
+		<sprite name="cobwebs"    x="0"     y="-100"  sprite="cobwebs"      scroll="0.8" />
+		<sprite name="shadows"    x="-200"  y="200"   sprite="shadows"      scroll="1.0" alpha="0.4" />
+	</high-memory>
+</stage>

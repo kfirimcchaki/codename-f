@@ -1,0 +1,19 @@
+<!DOCTYPE codename-engine-stage>
+<stage zoom="0.85" name="concert" folder="stages/concert/" startCamPosX="600" startCamPosY="300">
+	<!-- Concert Stage Preset - Full stage with lighting rig and crowd -->
+	<sprite name="bg_crowd"       x="-200"  y="-200"  sprite="crowd"        scroll="0.3" />
+	<sprite name="bg_lights"      x="-100"  y="-300"  sprite="lights_bg"    scroll="0.5" />
+	<sprite name="stage_floor"    x="-400"  y="400"   sprite="floor"        scroll="0.9" />
+	<sprite name="speakers_left"  x="-100"  y="200"   sprite="speakers"     scroll="1.2" />
+	<sprite name="speakers_right" x="900"   y="200"   sprite="speakers"     scroll="1.2" />
+	<girlfriend />
+	<sprite name="light_rig"      x="-50"   y="-400"  sprite="light_rig"    scroll="0.7" />
+	<dad />
+	<boyfriend />
+	<sprite name="stage_curtains" x="-500"  y="-300"  sprite="curtains"     scroll="1.3" />
+
+	<high-memory>
+		<sprite name="spotlight_bf"  x="770"  y="-100"  sprite="spotlight"   scroll="0.8" alpha="0.5" />
+		<sprite name="spotlight_dad" x="100"  y="-100"  sprite="spotlight"   scroll="0.8" alpha="0.5" />
+	</high-memory>
+</stage>

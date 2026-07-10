@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "Color", "type": "ColorWheel", "defaultValue": "#FFFFFF"},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Camera", "type": "DropDown('camGame', 'camHUD')", "defaultValue": "camGame"},
+		{"name": "Blend Mode", "type": "DropDown('normal', 'add', 'multiply', 'screen')", "defaultValue": "add"},
+		{"name": "Ease", "type": "DropDown('linear', 'quadOut', 'cubicOut', 'expoOut')", "defaultValue": "quadOut"}
+	]
+}

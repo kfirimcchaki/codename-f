@@ -1,0 +1,8 @@
+{
+	"params": [
+		{"name": "Shader Path", "type": "String", "defaultValue": "shaders/engine/chromaticAberration"},
+		{"name": "Target", "type": "DropDown('camGame', 'camHUD', 'stage', 'boyfriend', 'dad', 'girlfriend')", "defaultValue": "camGame"},
+		{"name": "Duration (steps, 0=permanent)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 0},
+		{"name": "Transition Time (steps)", "type": "Float(0, 9999, 0.25, 2)", "defaultValue": 1}
+	]
+}

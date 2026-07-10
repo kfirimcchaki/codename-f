@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "New Stage", "type": "String", "defaultValue": "stage"},
+		{"name": "Transition", "type": "DropDown('instant', 'fade', 'slide', 'zoom', 'wipe')", "defaultValue": "fade"},
+		{"name": "Duration (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Transition Color", "type": "ColorWheel", "defaultValue": "#000000"},
+		{"name": "Keep Characters", "type": "Bool", "defaultValue": false}
+	]
+}

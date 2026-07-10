@@ -1,0 +1,9 @@
+{
+	"name": "HX Tools",
+	"description": "HX File Browser and HX Code Editor - Browse and edit any .hx file in the engine with a powerful visual editor",
+	"author": "CodenameEngine",
+	"version": "1.0.0",
+	"restartRequired": false,
+	"enabled": true,
+	"priority": 0
+}

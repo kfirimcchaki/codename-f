@@ -1,0 +1,9 @@
+{
+	"params": [
+		{"name": "Group Name", "type": "String", "defaultValue": "myGroup"},
+		{"name": "Repeat Count", "type": "Int(1, 100, 1)", "defaultValue": 1},
+		{"name": "Repeat Interval (steps)", "type": "Float(0.25, 9999, 0.25, 2)", "defaultValue": 4},
+		{"name": "Loop?", "type": "Bool", "defaultValue": false},
+		{"name": "Reverse on Repeat?", "type": "Bool", "defaultValue": false}
+	]
+}
